@@ -19,45 +19,9 @@
 #include <cassert>
 #include <cstdlib>
 
+#define DEFAULT_ARRAY_SIZE 10
 
-// class Stack() {
-// public:
-// 	Stack(int size);
-// 	~Stack();
-	
-// 	void push(int value);
-// 	int pop();
-
-// 	bool isEmpty() const {return top = -1;}
-// private:
-// 	int* buffer;
-// 	int bufferSize;
-// 	int top;
-// };
-
-// Stack::Stack(int size) :
-// 	bufferSize(size);
-// 	top(-1)
-// {
-//     buffer = new int(bufferSize);
-// }
-
-// Stack::~Stack() {
-// 	delete[] buffer;
-// }
-
-// void Stack::push(int value) {
-// 	assert(top + 1 < bufferSize);
-// 	buffer[++top] = value;
-// }
-
-// int Stack::pop() {
-// 	assert(top != -1);
-// 	return buffer[top--];
-// }
-
-
-// 1) Реализовать динамический буффер
+// 1) Реализовать динамический буффер +
 // 2) Реализовать стек на динамическом буффере
 // 3) Реализовать очередь с помощью двух стеков
 
@@ -68,6 +32,7 @@ class Buffer {
         explicit Buffer(size_t _size);
         explicit Buffer(const Buffer& other);
         Buffer<T>& operator=(const Buffer<T>& other);
+        T& operator[](size_t index) {return buffer[index];}
         ~Buffer();
         T getAt(size_t index);
         void grow();
@@ -162,8 +127,88 @@ Buffer<T>::~Buffer()
     delete[] this->buffer;
 }
 
+template <typename T>
+class Stack {
+public:
+        Stack(size_t size);
+        ~Stack();
+        void push(T value);
+        T pop();
+        bool isEmpty() const {return m_top == -1;}
+
+        Buffer<T> m_buffer;
+private:
+        T m_top;
+};
+
+template <typename T>
+Stack<T>::Stack(size_t size) : m_buffer(size), m_top(-1)
+{
+}
+
+template <typename T>
+Stack<T>::~Stack()
+{
+}
+
+template <typename T>
+void Stack<T>::push(T value) {
+//    assert(m_top + 1 < m_buffer.getCapacity());
+    m_buffer[++m_top] = value;
+}
+
+template <typename T>
+T Stack<T>::pop() {
+    assert(m_top != -1);
+    return m_buffer[m_top--];
+}
+
+template <typename T>
+class Queue {
+public:
+    Queue(size_t size);
+    ~Queue();
+    void enqueue(T value);
+    T dequeue();
+    bool isEmpty() const {
+        if (m_stack1.isEmpty() && m_stack2.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
+private:
+    Stack<T> m_stack1;
+    Stack<T> m_stack2;
+};
+
+template <typename T>
+Queue<T>::Queue(size_t size) : m_stack1(size), m_stack2(size)
+{
+}
+
+template <typename T>
+Queue<T>::~Queue()
+{
+}
+
+template <typename T>
+void Queue<T>::enqueue(T value) {
+    m_stack1.push(value);
+}
+
+template <typename T>
+T Queue<T>::dequeue() {
+    if (m_stack2.isEmpty()) {
+        while (!(m_stack1.isEmpty())) {
+            m_stack2.push(m_stack1.pop());
+        }
+    }
+    return m_stack2.pop();
+}
 
 void bufferTestCase() {
+    std::cout << "**********Buffer**********"<< std::endl;
     std::cout << "Single element adding test : ";
     {
         Buffer<int> m_buffer(3);
@@ -197,10 +242,66 @@ void bufferTestCase() {
     std::cout << "OK\n";
 }
 
+void stackTestCase() {
+    std::cout << "**********Stack**********"<< std::endl;
+    std::cout << "Push method test: ";
+    {
+        Stack<int> stack(3);
+        stack.push(0);
+        stack.push(1);
+        stack.push(2);
+        for(size_t i = 0; i < stack.m_buffer.getSize(); ++i) {
+            assert(stack.m_buffer.getAt(i) == i);
+        }
+        assert(stack.isEmpty() == false);
+    }
+    std::cout << "OK\n";
+    std::cout << "isEmpty method test: ";
+    {
+        Stack<int> stack(3);
+        assert(stack.isEmpty() == true);
+    }
+    std::cout << "OK\n";
+    std::cout << "Pop method test: ";
+    {
+        Stack<int> stack(3);
+        stack.push(0);
+        stack.push(1);
+        stack.push(2);
+        assert(stack.pop() == 2);
+        assert(stack.pop() == 1);
+        assert(stack.pop() == 0);
+        assert(stack.isEmpty() == true);
+    }
+    std::cout << "OK\n";
+}
+
+void queueTestCase() {
+    std::cout << "**********Queue**********"<< std::endl;
+    std::cout << "Base queue test: ";
+    {
+        Queue<int> queue(3);
+        queue.enqueue(1);
+        queue.enqueue(2);
+        queue.enqueue(3);
+
+        assert(queue.dequeue() == 1);
+        assert(queue.dequeue() == 2);
+        assert(queue.dequeue() == 3);
+
+        assert(queue.isEmpty() == true);
+    }
+    std::cout << "OK\n";
+}
+
 int main(int argc, char* argv[]) {
-    bufferTestCase();
-//    size_t capacity = 0;
-//    std::cin >> capacity;
-//    assert(capacity != 0);
+//    bufferTestCase();
+//    stackTestCase();
+//    queueTestCase();
+    size_t capacity = 0;
+    std::cin >> capacity;
+    assert(capacity != 0);
+
+
     return 0;
 }
