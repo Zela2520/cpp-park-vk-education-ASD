@@ -18,12 +18,14 @@
 #include <iostream>
 #include <cassert>
 #include <cstdlib>
+#include <cstdint>
+#include <sstream>
 
-#define DEFAULT_ARRAY_SIZE 10
+#define DEFAULT_QUEUE_SIZE 10
 
 // 1) Реализовать динамический буффер +
-// 2) Реализовать стек на динамическом буффере
-// 3) Реализовать очередь с помощью двух стеков
+// 2) Реализовать стек на динамическом буффере +
+// 3) Реализовать очередь с помощью двух стеков +
 
 
 template <typename T>
@@ -199,12 +201,86 @@ void Queue<T>::enqueue(T value) {
 
 template <typename T>
 T Queue<T>::dequeue() {
+    if (this->isEmpty()) {
+        return -1;
+    }
+
     if (m_stack2.isEmpty()) {
         while (!(m_stack1.isEmpty())) {
             m_stack2.push(m_stack1.pop());
         }
     }
     return m_stack2.pop();
+}
+
+void run(std::istream& input, std::ostream& output) {
+    size_t numberOfOperation = 0;
+    input >> numberOfOperation;
+    assert(numberOfOperation != 0);
+
+    Queue<int> queue(DEFAULT_QUEUE_SIZE);
+    bool correct = true;
+
+    for (size_t i = 0; i < numberOfOperation; ++i) {
+        int operation = 0, value = 0;
+        input >> operation >> value;
+        switch (operation) {
+            case 2: {
+                // dequeue
+                if (queue.dequeue() != value) {
+                    correct = false;
+                }
+                break;
+            }
+            case 3: {
+                // enqueue
+                queue.enqueue(value);
+                break;
+            }
+        }
+    }
+
+    if (correct) {
+        output << "YES" << std::endl;
+    } else {
+        output << "NO" << std::endl;
+    }
+}
+
+void testLogic() {
+    std::cout << "***********TEST LOGIC: ";
+    {
+        std::stringstream sstr_input;
+        sstr_input << "3" << std::endl;
+        sstr_input << "3 44" << std::endl;
+        sstr_input << "3 50" << std::endl;
+        sstr_input << "2 44" << std::endl;
+        std::stringstream sstr_output;
+
+        run(sstr_input, sstr_output);
+        assert(sstr_output.str() == "YES\n");
+    }
+    {
+        std::stringstream sstr_input;
+        sstr_input << "2" << std::endl;
+        sstr_input << "2 -1" << std::endl;
+        sstr_input << "3 10" << std::endl;
+        std::stringstream sstr_output;
+
+        run(sstr_input, sstr_output);
+        assert(sstr_output.str() == "YES\n");
+    }
+    {
+        std::stringstream sstr_input;
+        sstr_input << "2" << std::endl;
+        sstr_input << "3 44" << std::endl;
+        sstr_input << "2 66" << std::endl;
+        std::stringstream sstr_output;
+
+        run(sstr_input, sstr_output);
+        assert(sstr_output.str() == "NO\n");
+    }
+    std::cout << "OK\n";
 }
 
 void bufferTestCase() {
@@ -298,9 +374,8 @@ int main(int argc, char* argv[]) {
 //    bufferTestCase();
 //    stackTestCase();
 //    queueTestCase();
-    size_t capacity = 0;
-    std::cin >> capacity;
-    assert(capacity != 0);
+//    testLogic();
+    run(std::cin, std::cout);
 
 
     return 0;
