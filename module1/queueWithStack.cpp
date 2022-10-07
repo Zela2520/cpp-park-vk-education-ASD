@@ -18,7 +18,6 @@
 #include <iostream>
 #include <cassert>
 #include <cstdlib>
-#include <cstdint>
 #include <sstream>
 
 #define DEFAULT_QUEUE_SIZE 10
@@ -31,7 +30,7 @@
 template <typename T>
 class Buffer {
     public:
-        explicit Buffer(size_t _size);
+        Buffer(size_t _size);
         explicit Buffer(const Buffer& other);
         Buffer<T>& operator=(const Buffer<T>& other);
         T& operator[](size_t index) {return buffer[index];}
@@ -48,6 +47,47 @@ class Buffer {
 };
 
 template <typename T>
+Buffer<T>::Buffer(size_t _capacity) {
+    this->size = 0;
+    this->capacity = _capacity;
+    this->buffer = (T*)calloc(0,(this->capacity + 1) * sizeof(T));
+}
+
+template <typename T>
+Buffer<T>::~Buffer()
+{
+    assert(this->buffer);
+    free(this->buffer);
+}
+
+template <typename T>
+Buffer<T>::Buffer(const Buffer& other) {
+    this->size = other.size;
+    this->capacity = other.capacity;
+    this->buffer = new T(other.capacity);
+
+    for (size_t i = 0; i < other.size; ++i) {
+        this->buffer[i] = other.buffer[i];
+    }
+}
+
+template <typename T>
+Buffer<T>& Buffer<T>::operator=(const Buffer<T>& other) {
+    this->size = other.size;
+    this->capacity = other.capacity;
+    if (this->data) {
+        delete[] this->data;
+    }
+
+    this->data = new T(other.capacity);
+    for (size_t i = 0; i < other.size; ++i) {
+        this->buffer[i] = other->buffer[i];
+    }
+
+    return *this;
+}
+
+template <typename T>
 T Buffer<T>::getAt(size_t index) {
     assert(index >= 0 && index < this->size && this->buffer);
     return this->buffer[index];
@@ -57,7 +97,7 @@ template <typename T>
 void Buffer<T>::grow() {
     size_t newCapacity = this->capacity * 2;
     size_t newSize = this->size;
-    T* newBuffer = (T*) calloc(newCapacity, sizeof(T));
+    int* newBuffer = (int*) calloc(0, (newCapacity + 1) * sizeof(T));
 
     for (size_t i = 0; i < this->size; ++i) {
         newBuffer[i] = buffer[i];
@@ -86,47 +126,6 @@ size_t Buffer<T>::getSize() {
 template <typename T>
 size_t Buffer<T>::getCapacity() {
     return this->capacity;
-}
-
-template <typename T>
-Buffer<T>::Buffer(size_t _capacity) {
-    this->size = 0;
-    this->capacity = _capacity;
-    this->buffer = new T(this->capacity);
-}
-
-template <typename T>
-Buffer<T>::Buffer(const Buffer& other) {
-    this->size = other.size;
-    this->capacity = other.capacity;
-    this->buffer = new T(other.capacity);
-
-    for (size_t i = 0; i < other.size; ++i) {
-        this->buffer[i] = other.buffer[i];
-    }
-}
-
-template <typename T>
-Buffer<T>& Buffer<T>::operator=(const Buffer<T>& other) {
-    this->size = other.size;
-    this->capacity = other.capacity;
-    if (this->data) {
-        delete[] this->data;
-    }
-    
-    this->data = new T(other.capacity);
-    for (size_t i = 0; i < other.size; ++i) {
-        this->buffer[i] = other->buffer[i];
-    }
-
-    return *this;
-}
-
-template <typename T>
-Buffer<T>::~Buffer()
-{
-    assert(this->buffer);
-    delete[] this->buffer;
 }
 
 template <typename T>
@@ -247,136 +246,134 @@ void run(std::istream& input, std::ostream& output) {
     }
 }
 
-void testLogic() {
-    std::cout << "***********TEST LOGIC: ";
-    {
-        std::stringstream sstr_input;
-        sstr_input << "3" << std::endl;
-        sstr_input << "3 44" << std::endl;
-        sstr_input << "3 50" << std::endl;
-        sstr_input << "2 44" << std::endl;
-        std::stringstream sstr_output;
+//void testLogic() {
+//    std::cout << "***********TEST LOGIC: ";
+//    {
+//        std::stringstream sstr_input;
+//        sstr_input << "3" << std::endl;
+//        sstr_input << "3 44" << std::endl;
+//        sstr_input << "3 50" << std::endl;
+//        sstr_input << "2 44" << std::endl;
+//        std::stringstream sstr_output;
+//
+//        run(sstr_input, sstr_output);
+//        assert(sstr_output.str() == "YES\n");
+//    }
+//    {
+//        std::stringstream sstr_input;
+//        sstr_input << "2" << std::endl;
+//        sstr_input << "2 -1" << std::endl;
+//        sstr_input << "3 10" << std::endl;
+//        std::stringstream sstr_output;
+//
+//        run(sstr_input, sstr_output);
+//        assert(sstr_output.str() == "YES\n");
+//    }
+//    {
+//        std::stringstream sstr_input;
+//        sstr_input << "2" << std::endl;
+//        sstr_input << "3 44" << std::endl;
+//        sstr_input << "2 66" << std::endl;
+//        std::stringstream sstr_output;
+//
+//        run(sstr_input, sstr_output);
+//        assert(sstr_output.str() == "NO\n");
+//    }
+//    std::cout << "OK\n";
+//}
+//
+//void bufferTestCase() {
+//    std::cout << "**********Buffer**********"<< std::endl;
+//    std::cout << "Single element adding test : ";
+//    {
+//        Buffer<int> m_buffer(3);
+//        m_buffer.add(1);
+//        m_buffer.add(8);
+//        assert(m_buffer.getAt(0) == 1);
+//        assert(m_buffer.getAt(1) == 8);
+//    }
+//    std::cout << "OK\n";
+//
+//    std::cout << "Add method test: ";
+//    {
+//        Buffer<int> m_buffer(3);
+//        for (size_t i = 0; i < m_buffer.getCapacity(); ++i) {
+//            m_buffer.add(i);
+//        }
+//        assert(m_buffer.getSize() == 3);
+//    }
+//    std::cout << "OK\n";
+//
+//    std::cout << "Grow and getAt methods tests: ";
+//    {
+//        Buffer<int> m_buffer(1);
+//        for (size_t i = 0; i < 20; ++i) {
+//            m_buffer.add(i);
+//        }
+//        for(size_t i = 0; i < m_buffer.getSize(); ++i) {
+//            assert(m_buffer.getAt(i) == i);
+//        }
+//    }
+//    std::cout << "OK\n";
+//}
+//
+//void stackTestCase() {
+//    std::cout << "**********Stack**********"<< std::endl;
+//    std::cout << "Push method test: ";
+//    {
+//        Stack<int> stack(3);
+//        stack.push(0);
+//        stack.push(1);
+//        stack.push(2);
+//        for(size_t i = 0; i < stack.m_buffer.getSize(); ++i) {
+//            assert(stack.m_buffer.getAt(i) == i);
+//        }
+//        assert(stack.isEmpty() == false);
+//    }
+//    std::cout << "OK\n";
+//    std::cout << "isEmpty method test: ";
+//    {
+//        Stack<int> stack(3);
+//        assert(stack.isEmpty() == true);
+//    }
+//    std::cout << "OK\n";
+//    std::cout << "Pop method test: ";
+//    {
+//        Stack<int> stack(3);
+//        stack.push(0);
+//        stack.push(1);
+//        stack.push(2);
+//        assert(stack.pop() == 2);
+//        assert(stack.pop() == 1);
+//        assert(stack.pop() == 0);
+//        assert(stack.isEmpty() == true);
+//    }
+//    std::cout << "OK\n";
+//}
+//
+//void queueTestCase() {
+//    std::cout << "**********Queue**********"<< std::endl;
+//    std::cout << "Base queue test: ";
+//    {
+//        Queue<int> queue(3);
+//        queue.enqueue(1);
+//        queue.enqueue(2);
+//        queue.enqueue(3);
+//
+//        assert(queue.dequeue() == 1);
+//        assert(queue.dequeue() == 2);
+//        assert(queue.dequeue() == 3);
+//
+//        assert(queue.isEmpty() == true);
+//    }
+//    std::cout << "OK\n";
+//}
 
-        run(sstr_input, sstr_output);
-        assert(sstr_output.str() == "YES\n");
-    }
-    {
-        std::stringstream sstr_input;
-        sstr_input << "2" << std::endl;
-        sstr_input << "2 -1" << std::endl;
-        sstr_input << "3 10" << std::endl;
-        std::stringstream sstr_output;
-
-        run(sstr_input, sstr_output);
-        assert(sstr_output.str() == "YES\n");
-    }
-    {
-        std::stringstream sstr_input;
-        sstr_input << "2" << std::endl;
-        sstr_input << "3 44" << std::endl;
-        sstr_input << "2 66" << std::endl;
-        std::stringstream sstr_output;
-
-        run(sstr_input, sstr_output);
-        assert(sstr_output.str() == "NO\n");
-    }
-    std::cout << "OK\n";
-}
-
-void bufferTestCase() {
-    std::cout << "**********Buffer**********"<< std::endl;
-    std::cout << "Single element adding test : ";
-    {
-        Buffer<int> m_buffer(3);
-        m_buffer.add(1);
-        m_buffer.add(8);
-        assert(m_buffer.getAt(0) == 1);
-        assert(m_buffer.getAt(1) == 8);
-    }
-    std::cout << "OK\n";
-
-    std::cout << "Add method test: ";
-    {
-        Buffer<int> m_buffer(3);
-        for (size_t i = 0; i < m_buffer.getCapacity(); ++i) {
-            m_buffer.add(i);
-        }
-        assert(m_buffer.getSize() == 3);
-    }
-    std::cout << "OK\n";
-
-    std::cout << "Grow and getAt methods tests: ";
-    {
-        Buffer<int> m_buffer(1);
-        for (size_t i = 0; i < 20; ++i) {
-            m_buffer.add(i);
-        }
-        for(size_t i = 0; i < m_buffer.getSize(); ++i) {
-            assert(m_buffer.getAt(i) == i);
-        }
-    }
-    std::cout << "OK\n";
-}
-
-void stackTestCase() {
-    std::cout << "**********Stack**********"<< std::endl;
-    std::cout << "Push method test: ";
-    {
-        Stack<int> stack(3);
-        stack.push(0);
-        stack.push(1);
-        stack.push(2);
-        for(size_t i = 0; i < stack.m_buffer.getSize(); ++i) {
-            assert(stack.m_buffer.getAt(i) == i);
-        }
-        assert(stack.isEmpty() == false);
-    }
-    std::cout << "OK\n";
-    std::cout << "isEmpty method test: ";
-    {
-        Stack<int> stack(3);
-        assert(stack.isEmpty() == true);
-    }
-    std::cout << "OK\n";
-    std::cout << "Pop method test: ";
-    {
-        Stack<int> stack(3);
-        stack.push(0);
-        stack.push(1);
-        stack.push(2);
-        assert(stack.pop() == 2);
-        assert(stack.pop() == 1);
-        assert(stack.pop() == 0);
-        assert(stack.isEmpty() == true);
-    }
-    std::cout << "OK\n";
-}
-
-void queueTestCase() {
-    std::cout << "**********Queue**********"<< std::endl;
-    std::cout << "Base queue test: ";
-    {
-        Queue<int> queue(3);
-        queue.enqueue(1);
-        queue.enqueue(2);
-        queue.enqueue(3);
-
-        assert(queue.dequeue() == 1);
-        assert(queue.dequeue() == 2);
-        assert(queue.dequeue() == 3);
-
-        assert(queue.isEmpty() == true);
-    }
-    std::cout << "OK\n";
-}
-
-int main(int argc, char* argv[]) {
+int main() {
 //    bufferTestCase();
 //    stackTestCase();
 //    queueTestCase();
 //    testLogic();
     run(std::cin, std::cout);
-
-
     return 0;
 }
