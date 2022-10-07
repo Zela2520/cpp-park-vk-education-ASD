@@ -309,7 +309,7 @@ void bufferTestCase() {
     std::cout << "Grow and getAt methods tests: ";
     {
         Buffer<int> m_buffer(1);
-        for (size_t i = 0; i < 20; ++i) {
+        for (size_t i = 0; i < 1000; ++i) {
             m_buffer.add(i);
         }
         for(size_t i = 0; i < m_buffer.getSize(); ++i) {
