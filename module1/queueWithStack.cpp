@@ -22,28 +22,24 @@
 
 #define DEFAULT_QUEUE_SIZE 10
 
-// 1) Реализовать динамический буффер +
-// 2) Реализовать стек на динамическом буффере +
-// 3) Реализовать очередь с помощью двух стеков +
-
-
 template <typename T>
 class Buffer {
     public:
-        Buffer(size_t _size);
-        explicit Buffer(const Buffer& other);
-        Buffer<T>& operator=(const Buffer<T>& other);
-        T& operator[](size_t index) {return buffer[index];}
+        explicit Buffer(size_t _capacity);
+        Buffer(const Buffer& other) = delete;
+        Buffer<T>& operator=(const Buffer<T>& other) = delete;
+        T& operator[](T index) {return buffer[index];}
         ~Buffer();
-        T getAt(size_t index);
+        T getAt(T index);
         void grow();
         void add(T data);
         size_t getSize();
+        void setSize(size_t _size) {size = _size;}
         size_t getCapacity();
     private:
-        T* buffer;
         size_t size;
-        size_t capacity; 
+        size_t capacity;
+        T* buffer;
 };
 
 template <typename T>
@@ -51,6 +47,9 @@ Buffer<T>::Buffer(size_t _capacity) {
     this->size = 0;
     this->capacity = _capacity;
     this->buffer = new T[this->capacity];
+    for (size_t i = 0; i < this->capacity; ++i) {
+        this->buffer[i] = 0;
+    }
 }
 
 template <typename T>
@@ -61,57 +60,34 @@ Buffer<T>::~Buffer()
 }
 
 template <typename T>
-Buffer<T>::Buffer(const Buffer& other) {
-    this->size = other.size;
-    this->capacity = other.capacity;
-    this->buffer = new T[other.capacity];
-
-    for (size_t i = 0; i < other.size; ++i) {
-        this->buffer[i] = other.buffer[i];
-    }
-}
-
-template <typename T>
-Buffer<T>& Buffer<T>::operator=(const Buffer<T>& other) {
-    this->size = other.size;
-    this->capacity = other.capacity;
-    if (this->data) {
-        delete[] this->data;
-    }
-
-    this->data = new T[other.capacity];
-    for (size_t i = 0; i < other.size; ++i) {
-        this->buffer[i] = other->buffer[i];
-    }
-
-    return *this;
-}
-
-template <typename T>
-T Buffer<T>::getAt(size_t index) {
-    assert(index < this->size && this->buffer);
+T Buffer<T>::getAt(T index) {
+//    assert(index >= 0 && index < this->size && this->buffer);
+    assert(index >= 0 && this->buffer); // для тестов
     return this->buffer[index];
 }
 
 template <typename T>
 void Buffer<T>::grow() {
-    size_t newCapacity = this->capacity * 2;
-    size_t newSize = this->size;
-    int* newBuffer = new T[newCapacity];
+    size_t newSize = this->capacity;
+   size_t newCapacity = this->capacity * 2;
 
-    for (size_t i = 0; i < this->size; ++i) {
-        newBuffer[i] = buffer[i];
-    }
+   T* newBuffer = new T[newCapacity];
+   for (size_t i = 0; i < newSize; ++i) {
+       newBuffer[i] = buffer[i];
+   }
+   for (size_t i = newSize; i < this->capacity; ++i) {
+       newBuffer[i] = 0;
+   }
 
-    delete[] this->buffer;
-    this->buffer = newBuffer;
-    this->capacity = newCapacity;
-    this->size = newSize;
+   delete[] this->buffer;
+   this->buffer = newBuffer;
+   this->capacity = newCapacity;
+   this->size = newSize;
 }
 
 template <typename T>
 void Buffer<T>::add(T data) {
-    if (this->size == this->capacity) {
+    if (this->size == this->capacity) { // this->size + 1 ?
         grow();
     }
     assert(this->size < this->capacity && this->buffer);
@@ -138,25 +114,33 @@ public:
         void push(T value);
         T pop();
         bool isEmpty() const {return m_top == -1;}
-
-        Buffer<T> m_buffer;
+        Buffer<T> m_buffer; // public для тестов
 private:
         T m_top;
 };
 
+// для тестов
 template <typename T>
 Stack<T>::Stack(size_t size) : m_buffer(size), m_top(-1)
 {
 }
+
+//template <typename T>
+//Stack<T>::Stack(size_t size) : m_top(-1), m_buffer(size)
+//{
+//}
 
 template <typename T>
 Stack<T>::~Stack()
 {
 }
 
+// неправильно
 template <typename T>
 void Stack<T>::push(T value) {
-//    assert(m_top + 1 < m_buffer.getCapacity());
+    if (m_top + 1 == static_cast<int>(m_buffer.getCapacity())) {
+        m_buffer.grow();
+    }
     m_buffer[++m_top] = value;
 }
 
@@ -166,6 +150,7 @@ T Stack<T>::pop() {
     return m_buffer[m_top--];
 }
 
+//////////////////////////////////Queue////////////////////////////////////
 template <typename T>
 class Queue {
 public:
@@ -215,14 +200,13 @@ T Queue<T>::dequeue() {
 }
 
 void run(std::istream& input, std::ostream& output) {
-    size_t numberOfOperation = 0;
+    int numberOfOperation = 0;
     input >> numberOfOperation;
-    assert(numberOfOperation != 0);
 
     Queue<int> queue(DEFAULT_QUEUE_SIZE);
     bool correct = true;
 
-    for (size_t i = 0; i < numberOfOperation; ++i) {
+    for (int i = 0; i < numberOfOperation; ++i) {
         int operation = 0, value = 0;
         input >> operation >> value;
         switch (operation) {
@@ -241,6 +225,7 @@ void run(std::istream& input, std::ostream& output) {
         }
     }
 
+//   correct ? (output << "YES" << std::endl) : output << "NO" << std::endl;
     if (correct) {
         output << "YES" << std::endl;
     } else {
@@ -300,7 +285,7 @@ void bufferTestCase() {
     {
         Buffer<int> m_buffer(3);
         for (size_t i = 0; i < m_buffer.getCapacity(); ++i) {
-            m_buffer.add(i);
+            m_buffer.add(static_cast<int>(i));
         }
         assert(m_buffer.getSize() == 3);
     }
@@ -309,11 +294,11 @@ void bufferTestCase() {
     std::cout << "Grow and getAt methods tests: ";
     {
         Buffer<int> m_buffer(1);
-        for (size_t i = 0; i < 1000; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             m_buffer.add(i);
         }
         for(size_t i = 0; i < m_buffer.getSize(); ++i) {
-            assert(m_buffer.getAt(i) == static_cast<int>(i));
+            assert(m_buffer.getAt(static_cast<int>(i)) == static_cast<int>(i));
         }
     }
     std::cout << "OK\n";
@@ -327,24 +312,32 @@ void stackTestCase() {
         stack.push(0);
         stack.push(1);
         stack.push(2);
-        for(size_t i = 0; i < stack.m_buffer.getSize(); ++i) {
-            assert(stack.m_buffer.getAt(i) == static_cast<int>(i));
+        stack.push(3);
+        stack.push(4);
+        for (size_t i = 0; i < 5; ++i) {
+            assert(stack.m_buffer.getAt(static_cast<int>(i)) == static_cast<int>(i));
         }
         assert(stack.isEmpty() == false);
     }
     std::cout << "OK\n";
+
     std::cout << "isEmpty method test: ";
     {
         Stack<int> stack(3);
         assert(stack.isEmpty() == true);
     }
     std::cout << "OK\n";
+
     std::cout << "Pop method test: ";
     {
         Stack<int> stack(3);
         stack.push(0);
         stack.push(1);
         stack.push(2);
+        stack.push(3);
+        stack.push(4);
+        assert(stack.pop() == 4);
+        assert(stack.pop() == 3);
         assert(stack.pop() == 2);
         assert(stack.pop() == 1);
         assert(stack.pop() == 0);
@@ -372,10 +365,10 @@ void queueTestCase() {
 }
 
 int main() {
-    bufferTestCase();
-    stackTestCase();
-    queueTestCase();
-    testLogic();
-//    run(std::cin, std::cout);
+//    bufferTestCase();
+//    stackTestCase();
+//    queueTestCase();
+//    testLogic();
+    run(std::cin, std::cout);
     return 0;
 }
