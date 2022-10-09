@@ -10,27 +10,30 @@
 //Формат вывода
 //Целое число - количество бит
 
+
 #include <iostream>
 #include <cstdint>
 
 u_int32_t countNumberOfBits(u_int32_t number) {
-    return number;
+    u_int32_t counterBit = 0;
+    u_int32_t i = 0;
+    while (number) {
+        if (i % 2 == 0 && number & 1) {
+            ++counterBit;
+        }
+        number = number >> 1;
+        ++i;
+    }
+    return counterBit;
 }
-
-//uint32_t userInput(std::istream& input) {
-//    u_int32_t number;
-//    input >> number;
-//    return number;
-//}
 
 void run(std::istream& input, std::ostream& output) {
     u_int32_t number;
     input >> number;
-    output << countNumberOfBits(number) << std::endl;
+    output << countNumberOfBits(number);
 }
 
 int main() {
-    // testBaseCheckBits();
     run(std::cin, std::cout);
     return 0;
 }

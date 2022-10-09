@@ -1,4 +1,4 @@
-TARGET = build/1_3
+TARGET = build/1_1
 
 .PHONY: all build rebuild memtest clean
 
