@@ -7,7 +7,9 @@ set(CMAKE_CXX_STANDARD 17)
 # add_executable(1_1
 #         module1/bitCheck.cpp)
 
-add_executable(1_1 module1/mergeArraysByHeap.cpp)
+# add_executable(1_4 module1/mergeArraysByHeap.cpp)
+
+add_executable(1_5 module1/advertising.cpp)
 
 #add_executable(1_2
 #        module1/twinSearch.cpp)

@@ -142,63 +142,35 @@ size_t Buffer<T>::getCapacity() {
     return this->capacity;
 }
 
-///////////////////////////Comparator//////////////////////////////// 
-
-template <typename T>
-class MaxHeap {
-    public:
-        bool operator()(const T& child, const T& parrent) const {
-            return child > parrent;
-        }
-};
-
-template <typename T>
-class MinHeap {
-    public:
-        bool operator()(const T& child, const T& parrent) const {
-            return child < parrent;
-        }
-};
-
 ///////////////////////////HEAP__HELPER//////////////////////////////// 
 
 template <typename T>
-class BufferIterator {
-    public:
-        Buffer<T> buffer;
-        size_t curPosition;
-        BufferIterator() : buffer(DEFAULT_BUFFER_SIZE), curPosition(0) {}
-        BufferIterator(size_t _size) : buffer(_size), curPosition(0) {}
-        BufferIterator<T>& operator=(const BufferIterator<T>& other) {
-            this->curPosition = other.curPosition;
-            this->buffer->size = other.buffer.size;
-            this->buffer->capacity = other.buffer.capacity;
-            if (this->buffer->buffer) {
-                delete[] this->buffer->buffer;
-            }
+struct ArrayIterator {
+    T *buffer;
+    size_t size;
+    size_t capacity;
+    size_t curPosition;
 
-            this->buffer->buffer = new T[other.buffer.capacity];
-            for (size_t i = 0; i < other.buffer.size; ++i) {
-                this->buffer->buffer[i] = other.buffer.buffer[i];
-            }
-
-            for (size_t i = this->size; i < this->capacity; ++i) {
-                this->buffer->buffer[i] = 0;
-            }
-
-            return *this;
-        };
-        T& operator[](size_t index) {return buffer.buffer[index];}
-        void pushBack(const T& value);
+    ArrayIterator(size_t _size) : size(0), capacity(_size), curPosition(0) {
+        buffer = new T[capacity];
+    }
+    ~ArrayIterator() {
+        if (buffer) {
+            delete[] buffer;
+            buffer = nullptr;
+        }
+    }
+    void pushBack(const T &value);
 };
 
 template <typename T>
-void BufferIterator<T>::pushBack(const T& value) {
-    buffer.add(value);
+void ArrayIterator<T>::pushBack(const T &value) {
+    assert(this->size + 1 == this->capacity);
+    buffer[size++] = value;
 }
 
 template <typename T>
-class MaxHeapIterator {
+class ArrayComparator {
     public:
         bool operator()(const BufferIterator<T>& child, const BufferIterator<T>& parrent) const {
             return child.buffer[child.curPosition] < parrent.buffer[parrent.curPosition];
@@ -207,7 +179,7 @@ class MaxHeapIterator {
 
 ///////////////////////////HEAP//////////////////////////////// 
 
-template <typename T, class Comparator = MaxHeapIterator<T>>
+template <typename T, class Comparator = ArrayIterator<T>>
 class Heap {
 public:
     explicit Heap(size_t _size);
@@ -296,13 +268,13 @@ void printResult(int* result, int sumSize) {
     }
 }
 
-void fillHeap(std::istream& input, Heap<BufferIterator<int>, MaxHeapIterator<int>> &heap, size_t heapSize, size_t &sumHeapSize) {
+void fillHeap(std::istream& input, Heap<ArrayIterator<int>, ArrayComparator<int>> &heap, size_t heapSize, size_t &sumHeapSize) {
     for (size_t i = 0; i < heapSize; ++i) {
         size_t curArraySize = 0;
         input >> curArraySize;
         sumHeapSize += curArraySize;
 
-        BufferIterator<int> buffer(curArraySize);
+        ArrayIterator<int> buffer(curArraySize);
         for (size_t i = 0; i < curArraySize; ++i) {
             int tmp;
             input >> tmp;
@@ -313,9 +285,9 @@ void fillHeap(std::istream& input, Heap<BufferIterator<int>, MaxHeapIterator<int
     }
 }
 
-void mergeArrays(Heap<BufferIterator<int>, MaxHeapIterator<int>>& heap, int* mergeSortArray, size_t arraySize) {
+void mergeArrays(Heap<ArrayIterator<int>, ArrayComparator<int>>& heap, int* mergeSortArray, size_t arraySize) {
     for (size_t i = 0; i < arraySize; ++i) {
-        BufferIterator<int> curItemOfMergeSortArray = heap.removeMin();
+        ArrayIterator<int> curItemOfMergeSortArray = heap.removeMin();
         mergeSortArray[i] = curItemOfMergeSortArray.buffer[static_cast<size_t>(curItemOfMergeSortArray.curPosition++)];
     }
 }
@@ -325,7 +297,7 @@ void run(std::istream& input, std::ostream& output) {
     input >> heapSize;
     assert(heapSize > 0);
 
-    Heap<BufferIterator<int>, MaxHeapIterator<int>> heap(heapSize);
+    Heap<ArrayIterator<int>, ArrayComparator<int>> heap(heapSize);
     size_t sumHeapSize = 0;
 
     fillHeap(input, heap, heapSize, sumHeapSize);
