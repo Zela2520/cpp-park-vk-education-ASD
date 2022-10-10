@@ -28,7 +28,7 @@ class Buffer {
         explicit Buffer(size_t _capacity);
         Buffer(const Buffer& other) = delete;
         Buffer<T>& operator=(const Buffer<T>& other) = delete;
-        T& operator[](T index) {return buffer[index];}
+        T& operator[](size_t index) {return buffer[index];}
         ~Buffer();
         T getAt(T index);
         void grow();
