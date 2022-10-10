@@ -1,13 +1,11 @@
 TARGET = build/1_4
 
-.PHONY: all build rebuild memtest clean
+.PHONY: all rebuild build memtest clean
 
-all: clean build memtest
+all: clean build 
 
 build:
 	./build.sh
-
-rebuild: clean build
 
 memtest:
 	./build.sh
@@ -15,3 +13,5 @@ memtest:
 
 clean:
 	rm -rf build valgrind.log
+
+rebuild: clean build
