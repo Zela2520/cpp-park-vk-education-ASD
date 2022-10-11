@@ -103,11 +103,12 @@ class Buffer {
         Buffer<T>& operator=(const int& value) {this->buffer[this->size] = value; return *this;};
         T& operator[](size_t index) const {return buffer[index];}
         ~Buffer();
-        T getAt(T index) const;
+        T getAt(size_t index) const;
         void grow();
         void add(T data);
         size_t getSize();
         void setSize(size_t _size) {size = _size;}
+        void decreaseSize() {--this->size;}
         size_t getCapacity();
         size_t getCurPosition() const {return curPosition;}
         void increaseCurPositioin() {++this->curPosition;}
@@ -185,7 +186,7 @@ Buffer<T>::~Buffer()
 }
 
 template <typename T>
-T Buffer<T>::getAt(T index) const {
+T Buffer<T>::getAt(size_t index) const {
     assert(index >= 0 && index < this->size && this->buffer);
     return this->buffer[index];
 }
@@ -236,6 +237,25 @@ class BufferComparator {
         }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////HEAP//////////////////////////////// 
 
 template <typename T, class Comparator = BufferComparator<T>>
@@ -250,17 +270,19 @@ public:
 
     void pushBack(const T &value);
     T removeMin();
+    bool empty() const {return this->buffer.getSize() == 0;}
 
 private:
     Buffer<T> buffer;
     Comparator comparator;
+    size_t size;
 
     void siftUp(size_t parrentIndex);
     void siftDown(size_t parrentIndex);
 };
 
 template <typename T, class Comparator>
-Heap<T, Comparator>::Heap(size_t _size) : buffer(_size) {}
+Heap<T, Comparator>::Heap(size_t _size) : buffer(_size), size(0) {}
 
 template <typename T, class Comparator>
 Heap<T, Comparator>::~Heap() {}
@@ -269,38 +291,31 @@ Heap<T, Comparator>::~Heap() {}
 template <typename T, class Comparator>
 void Heap<T, Comparator>::pushBack(const T &value) {
     this->buffer.add(value);
+    ++size;
     siftUp(this->buffer.getSize() - 1);
 }
 
 template <typename T, class Comparator>
-void Heap<T, Comparator>::siftUp(size_t parrentIndex)  {
-    // size_t curParrentIndex = parrentIndex;
-    // while (curParrentIndex >= 0 && this->comparator(this->buffer[curParrentIndex], this->buffer[(curParrentIndex - 1) / 2])) {
-    //     std::swap(this->buffer[curParrentIndex], this->buffer[(curParrentIndex - 1 / 2)]);
-    //     curParrentIndex = (curParrentIndex - 1) / 2;
-    // }
-    while (parrentIndex > 0) {
+void Heap<T, Comparator>::siftUp(size_t childIndex)  {
+    while (childIndex > 0) {
 
-        size_t parent = (parrentIndex - 1) / 2;
-        if (this->comparator(this->buffer[parent], this->buffer[parrentIndex])) {
+        size_t parent = (childIndex - 1) / 2;
+        if (this->comparator(this->buffer[parent], this->buffer[childIndex])) {
             return;
         }
 
-        std::swap(this->buffer[parrentIndex], this->buffer[parent]);
-        parrentIndex = parent;
+        std::swap(this->buffer[childIndex], this->buffer[parent]);
+        childIndex = parent;
     }
 }
 
 template <typename T, class Comparator>
 T Heap<T, Comparator>::removeMin() {
-    assert(buffer.getSize() != 0);
-
-    std::swap(buffer[0], buffer[buffer.getSize() - 1]);
-    auto top = buffer[0];
-    std::cout << top.getCurPosElement() << std::endl;
+    assert(this->size != 0);
+    T top = this->buffer[0];
+    this->buffer[0] = this->buffer[--this->size];
     siftDown(0);
-
-    return top;
+    return top;    
 }
 
 template <typename T, class Comparator>
@@ -310,7 +325,7 @@ void Heap<T, Comparator>::siftDown(size_t parrentIndex) {
         size_t maxNodeIndex = curParrentIndex;
 
         for (size_t i = 1; i < 3; ++i) {
-            if (2 * curParrentIndex + i < this->buffer.getSize() && (this->comparator(this->buffer[2 * curParrentIndex + i], this->buffer[maxNodeIndex]))) {
+            if (2 * curParrentIndex + i < this->size && (this->comparator(this->buffer[2 * curParrentIndex + i], this->buffer[maxNodeIndex]))) {
                 maxNodeIndex = 2 * curParrentIndex + i;
             }
         }
@@ -320,20 +335,6 @@ void Heap<T, Comparator>::siftDown(size_t parrentIndex) {
 
         curParrentIndex = maxNodeIndex;
     }
-    // int left = 2 * parrentIndex + 1;
-    // int right = 2 * parrentIndex + 2;
-    // int largest = parrentIndex;
-
-    // if (left < this->buffer.getSize() && this->comparator(this->buffer[largest], this->buffer[left])) {
-    //     largest = left;
-    // }
-    // if (right < this->buffer.getSize() && this->comparator(this->buffer[largest], this->buffer[right])) {
-    //     largest = right;
-    // }
-    // if (largest != parrentIndex ) {
-    //     std::swap(this->buffer[parrentIndex], this->buffer[largest]);
-    //     siftDown(largest);
-    // }
 }
 
 ///////////////////////////MAIN//////////////////////////////// 
@@ -385,6 +386,22 @@ void run(std::istream& input, std::ostream& output) {
     printResult(outputArray, sumHeapSize);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////TEST//////////////////////////////// 
 
 void bufferTestCase() {
@@ -432,7 +449,7 @@ void bufferTestCase() {
                 second.add(i);
             }
         }
-    
+
         for (size_t i = 0; i < first.getSize(); ++i) {
             assert(cmp(first, second) == true);
             first.increaseCurPositioin();
@@ -468,7 +485,7 @@ void testArrayIteretor() {
                 second.pushBack(i);
             }
         }
-    
+
         for (size_t i = 0; i < first.size; ++i) {
             assert(cmp(first, second) == true);
         }
@@ -603,11 +620,11 @@ void testHeap() {
         buffer3.add(7);
         buffer3.add(8);
         buffer3.add(9);
-        
+
         heap.pushBack(buffer1);
         heap.pushBack(buffer2);
         heap.pushBack(buffer3);
-    
+
         assert(heap[0].getAt(0) == 1);
         assert(heap[0].getAt(1) == 5);
         assert(heap[0].getAt(2) == 6);
@@ -693,10 +710,10 @@ void testHeap() {
         heap.pushBack(buffer3);
         heap.pushBack(buffer4);
 
-        assert(heap.removeMin().getCurPosElement() == 50);
         assert(heap.removeMin().getCurPosElement() == 1);
         assert(heap.removeMin().getCurPosElement() == 6);
         assert(heap.removeMin().getCurPosElement() == 7);
+        assert(heap.removeMin().getCurPosElement() == 50);
     }
     std::cout << "OK\n";
     std::cout << "*************All tests passed***********\n";
