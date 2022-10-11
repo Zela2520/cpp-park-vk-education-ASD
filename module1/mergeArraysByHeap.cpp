@@ -388,6 +388,10 @@ void mergeArrays(Heap<Buffer<int>, BufferComparator<int>>& heap, int* mergeSortA
         Buffer<int> curItemOfMergeSortArray = heap.removeMin();
         mergeSortArray[i] = curItemOfMergeSortArray[curItemOfMergeSortArray.getCurPosition()];
         curItemOfMergeSortArray.increaseCurPositioin();
+
+        if (curItemOfMergeSortArray.getCurPosition() < curItemOfMergeSortArray.getSize()) {
+            heap.pushBack(curItemOfMergeSortArray);
+        }
     }
 }
 
@@ -745,7 +749,7 @@ int main() {
     // bufferTestCase();
     // testArrayIteretor();
     // testingHeapBaseStructure();
-    testHeap();
-    // run(std::cin, std::cout);
+    // testHeap();
+    run(std::cin, std::cout);
     return 0;
 }
