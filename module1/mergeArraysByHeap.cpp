@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <cstring>
+#include <typeinfo>
 
 #define DEFAULT_BUFFER_SIZE 10
 
@@ -67,12 +68,12 @@ struct ArrayIterator {
     }
     T& operator[](const size_t i) {return this->buffer[i];}
 
-    void pushBack(const T &value);
+    void add(const T &value);
     T getAt(size_t index) const;
 };
 
 template <typename T>
-void ArrayIterator<T>::pushBack(const T &value) {
+void ArrayIterator<T>::add(const T &value) {
     assert(this->size != this->capacity);
     buffer[size++] = value;
 }
@@ -165,9 +166,6 @@ Buffer<T>::Buffer(const Buffer<T>& other) {
     this->size = other.size;
     this->capacity = other.capacity;
     this->curPosition = other.curPosition;
-    // if (this->buffer) {
-    //     delete[] this->buffer;
-    // }
 
     this->buffer = new T[this->capacity];
 
@@ -185,9 +183,8 @@ Buffer<T>& Buffer<T>::operator=(const Buffer<T>& other) {
     this->size = other.size;
     this->capacity = other.capacity;
     this->curPosition = other.curPosition;
-    // if (this->buffer) {
-    //     delete[] this->buffer;
-    // }
+
+    delete[] this->buffer;
 
     this->buffer = new T[this->capacity];
 
@@ -206,6 +203,11 @@ template <typename T>
 Buffer<T>::~Buffer()
 {
     assert(this->buffer);
+    // for (size_t i = 0; this->size; ++i) {
+    //     if (sizeof(this->buffer[i]) == sizeof(Buffer<int>)) {
+    //         delete &this->buffer[i];
+    //     }
+    // }
     delete[] this->buffer;
 }
 
@@ -491,7 +493,7 @@ void testArrayIteretor() {
     {
         ArrayIterator<int> arr(3);
         for(size_t i = 0; i < 3; ++i) {
-            arr.pushBack(i);
+            arr.add(i);
         }
 
         for (size_t i = 0; i < 3; ++i) {
@@ -506,9 +508,9 @@ void testArrayIteretor() {
         ArrayIterator<int> second(3);
         for (size_t i = 0; i < 6; ++i) {
             if (i < 3) {
-                first.pushBack(i);
+                first.add(i);
             } else {
-                second.pushBack(i);
+                second.add(i);
             }
         }
 
@@ -521,7 +523,7 @@ void testArrayIteretor() {
     {
         ArrayIterator<int> arr(3);
         for(size_t i = 0; i < 3; ++i) {
-            arr.pushBack(i);
+            arr.add(i);
         }
 
         for (size_t i = 0; i < 3; ++i) {
@@ -534,7 +536,7 @@ void testArrayIteretor() {
         ArrayIterator<int> first(3);
         ArrayIterator<int> second(3);
         for(size_t i = 0; i < 3; ++i) {
-            first.pushBack(i);
+            first.add(i);
         }
 
         second = first;
@@ -552,37 +554,37 @@ void testArrayIteretor() {
 
 void testingHeapBaseStructure() {
     std::cout << "******************Vector vectors component tests******************" << std::endl;
-    std::cout << "Buffer consist of ArrayIterator test: ";
-    {
-        ArrayIterator<int>* array = new ArrayIterator<int>[3]{ArrayIterator<int>(3)};
-        ArrayIterator<int> first(3);
-        for(size_t i = 0; i < 3; ++i) {
-            first.pushBack(i);
-        }
-        ArrayIterator<int> second(3);
-        for(size_t i = 3; i < 6; ++i) {
-            second.pushBack(i);
-        }
-        ArrayIterator<int> third(3);
-        for(size_t i = 6; i < 9; ++i) {
-            third.pushBack(i);
-        }
+    // std::cout << "Buffer consist of ArrayIterator test: ";
+    // {
+    //     ArrayIterator<int>* array = new ArrayIterator<int>[3]{ArrayIterator<int>(3)};
+    //     ArrayIterator<int> first(3);
+    //     for(size_t i = 0; i < 3; ++i) {
+    //         first.pushBack(i);
+    //     }
+    //     ArrayIterator<int> second(3);
+    //     for(size_t i = 3; i < 6; ++i) {
+    //         second.pushBack(i);
+    //     }
+    //     ArrayIterator<int> third(3);
+    //     for(size_t i = 6; i < 9; ++i) {
+    //         third.pushBack(i);
+    //     }
 
-        array[0] = first;
-        array[1] = second;
-        array[2] = third;
+    //     array[0] = first;
+    //     array[1] = second;
+    //     array[2] = third;
 
-        for (size_t i = 0; i < 3; ++i) {
-            assert(array[0].getAt(i) == static_cast<int>(i));
-        }
+    //     for (size_t i = 0; i < 3; ++i) {
+    //         assert(array[0].getAt(i) == static_cast<int>(i));
+    //     }
 
-        delete[] array;
-    }
-    std::cout << "OK\n";
+    //     delete[] array;
+    // }
+    // std::cout << "OK\n";
     std::cout << "Buffer consist of Buffer test: ";
     {
-        Buffer<Buffer<int>> array(3);
-        assert(array.getCapacity() == 3);
+        Buffer<Buffer<int>> array(4);
+        assert(array.getCapacity() == 4);
 
         Buffer<int> first(3);
         for(size_t i = 0; i < 3; ++i) {

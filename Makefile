@@ -2,7 +2,7 @@ TARGET = build/1_4
 
 .PHONY: all rebuild build memtest clean
 
-all: clean build 
+all: clean build memtest
 
 build:
 	./build.sh
