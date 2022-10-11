@@ -91,6 +91,30 @@ class ArrayComparator {
         }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ///////////////////////////DIN__BUFFER////////////////////////////////
 
 template <typename T>
@@ -108,7 +132,7 @@ class Buffer {
         void add(T data);
         size_t getSize();
         void setSize(size_t _size) {size = _size;}
-        void decreaseSize() {--this->size;}
+        size_t decreaseSize() {return --this->size;}
         size_t getCapacity();
         size_t getCurPosition() const {return curPosition;}
         void increaseCurPositioin() {++this->curPosition;}
@@ -275,14 +299,13 @@ public:
 private:
     Buffer<T> buffer;
     Comparator comparator;
-    size_t size;
 
     void siftUp(size_t parrentIndex);
     void siftDown(size_t parrentIndex);
 };
 
 template <typename T, class Comparator>
-Heap<T, Comparator>::Heap(size_t _size) : buffer(_size), size(0) {}
+Heap<T, Comparator>::Heap(size_t _size) : buffer(_size) {}
 
 template <typename T, class Comparator>
 Heap<T, Comparator>::~Heap() {}
@@ -291,7 +314,6 @@ Heap<T, Comparator>::~Heap() {}
 template <typename T, class Comparator>
 void Heap<T, Comparator>::pushBack(const T &value) {
     this->buffer.add(value);
-    ++size;
     siftUp(this->buffer.getSize() - 1);
 }
 
@@ -311,9 +333,9 @@ void Heap<T, Comparator>::siftUp(size_t childIndex)  {
 
 template <typename T, class Comparator>
 T Heap<T, Comparator>::removeMin() {
-    assert(this->size != 0);
+    assert(this->buffer.getSize() != 0);
     T top = this->buffer[0];
-    this->buffer[0] = this->buffer[--this->size];
+    this->buffer[0] = this->buffer[this->buffer.decreaseSize()];
     siftDown(0);
     return top;    
 }
@@ -325,7 +347,7 @@ void Heap<T, Comparator>::siftDown(size_t parrentIndex) {
         size_t maxNodeIndex = curParrentIndex;
 
         for (size_t i = 1; i < 3; ++i) {
-            if (2 * curParrentIndex + i < this->size && (this->comparator(this->buffer[2 * curParrentIndex + i], this->buffer[maxNodeIndex]))) {
+            if (2 * curParrentIndex + i < this->buffer.getSize() && (this->comparator(this->buffer[2 * curParrentIndex + i], this->buffer[maxNodeIndex]))) {
                 maxNodeIndex = 2 * curParrentIndex + i;
             }
         }
