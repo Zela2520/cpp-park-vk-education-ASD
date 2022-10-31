@@ -1,11 +1,14 @@
-TARGET = build/1_4
+TARGET = build/1_5
 
 .PHONY: all rebuild build memtest clean
 
-all: clean build memtest
+all: clean build run
 
 build:
 	./build.sh
+
+run: build
+	./${TARGET}
 
 memtest:
 	./build.sh

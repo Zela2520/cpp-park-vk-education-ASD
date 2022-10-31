@@ -354,7 +354,7 @@ void Heap<T, Comparator>::siftDown(size_t parrentIndex) {
 }
 
 ///////////////////////////MAIN//////////////////////////////// 
-void printResult(int* result, int sumSize) {
+void showR(int* result, int sumSize) {
     for (int i = 0; i < sumSize; ++i) {
         std::cout << result[i] << " ";
     }
@@ -403,14 +403,8 @@ void run(std::istream& input, std::ostream& output) {
 
     mergeArrays(heap, outputArray, sumHeapSize);
 
-    printResult(outputArray, sumHeapSize);
+    showR(outputArray, sumHeapSize);
 }
-
-
-
-
-
-
 
 
 
