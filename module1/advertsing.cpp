@@ -298,62 +298,64 @@ void run(std::istream& input, std::ostream& output) {
 
     mergeSort(CustomersArray, numberOfCustomer, min);
 
-    size_t sumShowCounter = 0;
+    // решение 1
+
+    // size_t sumShowCounter = 0;
     
-    for (size_t i = 0; i < numberOfCustomer; ++i) {
-        if (CustomersArray[i].needToShow()) {
-            size_t firstShow = CustomersArray[i].leavingTime;
-            size_t secondShow = CustomersArray[i].leavingTime - 1;
+    // for (size_t i = 0; i < numberOfCustomer; ++i) {
+    //     if (CustomersArray[i].needToShow()) {
+    //         size_t firstShow = CustomersArray[i].leavingTime;
+    //         size_t secondShow = CustomersArray[i].leavingTime - 1;
 
-            size_t j = i + 1;
-            if (CustomersArray[i].needToShow()) {
-                CustomersArray[i].show();
-                ++sumShowCounter;
-                while(CustomersArray[j].hasTime(firstShow) && j < numberOfCustomer) {
-                    CustomersArray[j].show();
-                    ++j;
-                }
-            }
+    //         size_t j = i + 1;
+    //         if (CustomersArray[i].needToShow()) {
+    //             CustomersArray[i].show();
+    //             ++sumShowCounter;
+    //             while(CustomersArray[j].hasTime(firstShow) && j < numberOfCustomer) {
+    //                 CustomersArray[j].show();
+    //                 ++j;
+    //             }
+    //         }
 
-            j = i + 1;
-            if (CustomersArray[i].needToShow()) {
-                CustomersArray[i].show();
-                ++sumShowCounter;
-                while(CustomersArray[j].hasTime(secondShow) && j < numberOfCustomer) {
-                    CustomersArray[j].show();
-                    ++j;
-                }
-            }
-        } 
+    //         j = i + 1;
+    //         if (CustomersArray[i].needToShow()) {
+    //             CustomersArray[i].show();
+    //             ++sumShowCounter;
+    //             while(CustomersArray[j].hasTime(secondShow) && j < numberOfCustomer) {
+    //                 CustomersArray[j].show();
+    //                 ++j;
+    //             }
+    //         }
+    //     } 
+    // }
+
+    // output << sumShowCounter << std::endl;
+
+// решение 2
+    size_t showCounter = 2;
+    size_t firstShow = CustomersArray[0].leavingTime - 1;
+    size_t secondShow = CustomersArray[0].leavingTime;
+
+    for (size_t i = 1; i < numberOfCustomer; ++i) {       
+        if (CustomersArray[i].comingTime > secondShow) {
+            showCounter += 2;
+            firstShow = CustomersArray[i].leavingTime - 1;
+            secondShow = CustomersArray[i].leavingTime;
+        } else if (CustomersArray[i].comingTime == secondShow) {
+            showCounter++;
+            firstShow = secondShow;
+            secondShow = CustomersArray[i].leavingTime;
+        } else if (CustomersArray[i].comingTime > firstShow && CustomersArray[i].leavingTime > secondShow) {
+            showCounter++;
+            firstShow = secondShow;
+            secondShow = CustomersArray[i].leavingTime;
+        }
     }
 
-    // size_t showCounter = 2;
-    // size_t firstShow = CustomersArray[0].leavingTime - 1;
-    // size_t secondShow = CustomersArray[0].leavingTime;
+    output << showCounter << std::endl;
 
-    // for (size_t i = 1; i < numberOfCustomer; ++i) {    
-    //     if (CustomersArray[i].comingTime < firstShow && CustomersArray[i].leavingTime >= secondShow) {
-    //         showCounter += 2;
-    //     } else if (CustomersArray[i].comingTime == secondShow) {
-    //         ++showCounter;
-
-    //     } else if (CustomersArray[i].comingTime > secondShow) {
-    //         showCounter += 2;
-    //     }
-
-    //     if (CustomersArray[i].comingTime > secondShow) {
-    //         firstShow = CustomersArray[i].leavingTime - 1;
-    //         secondShow = CustomersArray[i].leavingTime;
-    //     }
-    // }    
-    // output << showCounter << std::endl;
-
-    output << sumShowCounter << std::endl;
-
-    // print(CustomersArray, numberOfCustomer, output);
     delete[] CustomersArray;
     CustomersArray = nullptr;
-    
 }
 
 int main(int argc, char* argv[]) {
