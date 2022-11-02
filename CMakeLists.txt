@@ -19,4 +19,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 # add_executable(1_6 module1/kStatistic.cpp)
 
-add_executable(1_7 module1/msdDone.cpp)
+add_executable(1_7 module1/msd.cpp)
