@@ -12,19 +12,7 @@
 // aaa
 // ab
 
-// Замечания:
-// counterArray - массив, индексы которого являются все возможными значениями словаря. В ячейках содержится количество раз, которое встретился тот или иной элемент.
-
-// for (size_t i = 0; i < size; ++i) ++counter[arr[i]]; // говорит сколько раз встретился элемент в словаре.
-
-// for (size_t i = 1; i < avaliableValues; ++i) counter[i] += counter[i - 1]; // формируем группы элементов путем суммирования элементов, которые встречались  в словаре. Таким образом понимаем на какой позиции находится та или иная группа одинаковых элементов. Чтобы извлекать элементы группы достаточно сделать следующее обращение: --counter[arr[i]];
-
-
-// Как трактовать такую запись ? res[--counter[arr[i]]] = arr[i];
-// Ответ:  извлекаем i-ый элемент на последнюю позицию в его группе. (следующее извлечение на предпоследную позицию и т.д.)
-
 #include <iostream>
-#include <vector>
 #include <cstring>
 #include <string.h>
 #include <string>
@@ -34,23 +22,12 @@
 #define MAX_ROWS_NUMBER 100000
 #define ALPHABET_SIZE 256
 
-struct CounterHelper {
-    size_t stringNumber;
-    char curCharacter;
-};
-
 // Что мы должны передавать в функцию counterSort ?
 // 1 аргумент - начало группы
 // 2 аргумент - конец группы
 // 3 аргумент - индекс, по которому производится сортировка в группе
 
-
-// counterSort - работает: сортирует строки по символу
-// void counterSort(std::string *arr , size_t size, int* counterArray, size_t maxStringSizeInArray) 
-// void counterSort(std::string *arr , size_t size, size_t maxStringSizeInArray)
-
 void counterSort(std::string *arr , size_t size, int* counterArray, size_t sortIndex) {
-    // int* counterArray = new int[ALPHABET_SIZE];
     for (size_t i = 0; i < ALPHABET_SIZE; ++i) counterArray[i] = 0;
     for (size_t i = 0; i < size; ++i) ++counterArray[arr[i][sortIndex]]; // заполняем словарь первыми буквами группы
 
@@ -58,7 +35,7 @@ void counterSort(std::string *arr , size_t size, int* counterArray, size_t sortI
         counterArray[i] += counterArray[i - 1];
     }
 
-    std::string result[size];
+    std::string result[size]; 
     
     for (int i = size - 1; i >= 0; --i) {
         result[--counterArray[arr[i][sortIndex]]] = arr[i];
@@ -81,7 +58,6 @@ void MSDSort(std::string* arr, size_t size, size_t sortIndex, size_t maxStringSi
     counterSort(arr, size, counterArray, sortIndex++); // после этой строки получаем отсортированный по первому разряду массив строк
     if (maxStringSizeInArray > sortIndex) {
         for (int i = 1; i < ALPHABET_SIZE; ++i) {
-            // std::cout << *(arr + counterArray[i - 1]) << "\t" << counterArray[i] - counterArray[i - 1] << std::endl;
             MSDSort(arr + counterArray[i - 1], counterArray[i] - counterArray[i - 1], sortIndex, maxStringSizeInArray);
         }
     }
