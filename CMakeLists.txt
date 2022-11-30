@@ -25,8 +25,10 @@ add_executable(1_7 module1/msd.cpp)
 
 add_executable(2_1 module2/hashTable.cpp)
 
+add_executable(2_1_2 module2/chainHashTable.cpp)
+
 add_executable(2_2 module2/postOrder.cpp)
 
-add_executable(2_3 module2/BTree.cpp)
+# add_executable(2_3 module2/BTree.cpp)
 
-add_executable(2_4 module2/4_1.cpp)
+add_executable(2_4 module2/soldier.cpp)

@@ -1,251 +1,420 @@
+// В одной военной части решили построить в одну шеренгу по росту. Т.к. часть была далеко не образцовая, то солдаты часто приходили не вовремя, а то их и вовсе приходилось выгонять из шеренги за плохо начищенные сапоги. Однако солдаты в процессе прихода и ухода должны были всегда быть выстроены по росту – сначала самые высокие, а в конце – самые низкие. За расстановку солдат отвечал прапорщик, который заметил интересную особенность – все солдаты в части разного роста. Ваша задача состоит в том, чтобы помочь прапорщику правильно расставлять солдат, а именно для каждого приходящего солдата указывать, перед каким солдатом в строе он должен становится. Требуемая скорость выполнения команды - O(log n).
+
+// Формат ввода
+// Первая строка содержит число N – количество команд (1 ≤ N ≤ 90 000). В каждой следующей строке содержится описание команды: число 1 и X если солдат приходит в строй (X – рост солдата, натуральное число до 100 000 включительно) и число 2 и Y если солдата, стоящим в строе на месте Y надо удалить из строя. Солдаты в строе нумеруются с нуля.
+
+// Формат вывода
+// На каждую команду 1 (добавление в строй) вы должны выводить число K – номер позиции, на которую должен встать этот солдат (все стоящие за ним двигаются назад).
+
+// Пример
+// Ввод	Вывод
+// 5
+// 1 100
+// 1 200
+// 1 50
+// 2 1
+// 1 150
+// 0
+// 0
+// 2
+// 1
+
+
+// по сути обратная задача ко второй надо найти номер к-ой порядковой статистике узла
+// как это сделать ?
+// мы должны искть спускаться к листу и суммировать к-ые статистики родителей ?
+
 #include <iostream>
-#include <string>
+#include <sstream>
+#include <cassert>
+#include <random>
+#include <algorithm>
+#include <functional>
+#include <stack>
 
-template <typename T>
-class DefaultComparator {
-    public:
-        bool operator()(const T& left, const T& right) {
-            return left > right;
+
+const size_t RANDOM_SEED = 666;
+const size_t TEST_DATA_SIZE = 1111;
+
+template<class T>
+struct Compare {
+    enum Comparison {LESS, EQUAL, MORE};
+
+    Comparison operator()(const T &lhs, const T &rhs) {
+        if (lhs < rhs) { return LESS; }
+        if (lhs > rhs) { return MORE; }
+        return EQUAL;
+    };
+};
+
+template<class K, class D, class C = Compare<K>>
+class AVLTree {
+protected:
+    struct Node {
+        K key;
+        D data;
+        Node *left;
+        Node *right;
+        char height;
+        size_t elementCount;
+
+        Node(const K &k, const D &d) : key(k), data(d), left(nullptr), right(nullptr), height(1), elementCount(1) {}
+        ~Node() {
+            delete left;
+            delete right;
         }
-};
+        Node(const Node &rhs) = delete;
+        Node &operator=(const Node &rhs) = delete;
+        Node(Node &&rhs) = delete;
+        Node &operator=(Node &&rhs) = delete;
+    };
 
-template<class T, class Comparator = DefaultComparator<T>> class AvlTree;
+public:
+    explicit AVLTree(const C &compare = C());
+    ~AVLTree() { delete _root; }
+    AVLTree(const Node &rhs) = delete;
+    AVLTree &operator=(const AVLTree &rhs) = delete;
+    AVLTree(AVLTree &&rhs) = delete;
+    AVLTree &operator=(AVLTree &&rhs) = delete;
 
-template <typename T1>
-class Node {
-    private:
-        T1 m_data;
-        Node* left;
-        Node* right;
-        size_t height;
-        size_t count;
-    public:
-        Node(const T1& _data = T1{}) : m_data(_data), left(nullptr), right(nullptr), height(1) {}
-        template<class, class> friend class AvlTree; 
-};
+    D *find(const K &key);
+    void insert(const K &key, const D &data);
+    void erase(const K &key);
+    size_t size();
+    bool isEmpty();
+    void traverseInOrder(const std::function<void(const K &)> &callback);
 
-template <typename T, typename Comparator>
-class AvlTree {
-    Node<T>* root;
-    size_t size;
-    Comparator comp;
+protected:
+    Node *findAUX(const K &key, Node *node);
+    Node *insertAUX(const K &key, const D &data, Node *node);
+    Node *eraseAUX(const K &key, Node *node);
+    Node *deleteAUX(Node *node);
 
-    size_t getHeight(Node<T>* curNode);
-    void fixHeight(Node<T>* curNode);
+    Node *balance(Node *node);
+    Node *findAndRemoveMin(Node *node, Node **minNode);
+    void fixHeight(Node *node);
+    void fixElementCount(Node *node);
+    int balanceFactor(Node *node);
+    char height(Node *node);
+    Node *rotateLeft(Node *node);
+    Node *rotateRight(Node *node);
 
-    // повороты
-    Node<T>* rotateLeft(Node<T>* curNode);
-    Node<T>* rotateRight(Node<T>* curNode);
-
-    // балансировка
-    Node<T>* doBalance(Node<T>* curNode);
-    int getBalance(Node<T>* curNode);
-
-    // вспомогательные методы
-    Node<T>* addInternal(Node<T>* curNode, const T& data);
-    Node<T>* deleteInternal(Node<T>* curNode, const T& data);
-    Node<T>* findMin(Node<T>* curNode);
-    Node<T>* removeMin(Node<T>* curNode);
-    void destroyTree(Node<T>* curNode);
-
-    public:
-        AvlTree(Comparator _comp = Comparator()) : root(nullptr), size(0), comp(_comp) {}
-        ~AvlTree() {destroyTree(root);} 
-
-        void Add(const T& data);
-        bool Has(const T& data);
-        void Delete(const T& data);
-
-};
-
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::removeMin(Node<T>* curNode) {
-    if (!curNode->left) {
-        return curNode->right;
-    }
-
-    curNode->left = removeMin(curNode->left);
-    return doBalance(curNode);
-}
-
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::findMin(Node<T>* curNode) {
-    while(curNode->left) {
-        curNode = curNode->left;
-    }
-    return curNode;
-}
-
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::deleteInternal(Node<T>* curNode, const T& data) {
-    if(!curNode) {
-        return nullptr;
-    }
-    if (curNode->m_data < data) {
-        curNode->right = deleteInternal(curNode->right, data);
-    } else if (curNode->m_data > data) {
-        curNode->left = deleteInternal(curNode->left, data);
-    } else {
-        Node<T>* left = curNode->left;
-        Node<T>* right = curNode->right;
-
-        delete curNode;
-
-        if (!right) {
-            return left;
-        }
-
-        Node<T>* min = findMin(right);
-        min->right = removeMin(right);
-        min->left = left;
-
-        return doBalance(min);
-    }
-
-    return doBalance(curNode); 
-}
-
-template <typename T, typename Comparator>
-void AvlTree<T, Comparator>::Delete(const T& data) {
-    root = deleteInternal(root, data);
-}
-
-template <typename T, typename Comparator>
-void AvlTree<T, Comparator>::destroyTree(Node<T>* curNode) {
-    if (curNode) {
-        destroyTree(curNode->left);
-        destroyTree(curNode->right);
-        delete curNode;
-    }
-}
-
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::addInternal(Node<T>* curNode, const T& data) {
-    if (!curNode) {
-        return new Node(data);
-    }
-
-    if (curNode->m_data <= data) {
-        curNode->right = addInternal(curNode->right, data);
-    } else {
-        curNode->left = addInternal(curNode->left, data);
-    }
-
-    return doBalance(curNode);
-}
-
-template <typename T, typename Comparator>
-void AvlTree<T, Comparator>::Add(const T& data) {
-    root = addInternal(root, data); 
-}
-
-template <typename T, typename Comparator>
-int AvlTree<T, Comparator>::getBalance(Node<T>* curNode) {
-    return getHeight(curNode->right) - getHeight(curNode->left);
-}
-
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::doBalance(Node<T>* curNode) {
-    fixHeight(curNode);
     
-    switch (getBalance(curNode))
-    {
-        case 2:
-        {
-            if (getBalance(curNode->right) < 0) { // не оч понял надо пересмотреть лекцию и семинар
-                curNode->right = rotateRight(curNode->right);
-            }
-            return rotateLeft(curNode);
-        }
-        case -2:
-        {
-            if (getBalance(curNode->left) > 0) { // не оч понял надо пересмотреть лекцию и семинар
-                curNode->left = rotateLeft(curNode->left);
-            }
-            return rotateRight(curNode);
-        }
+    Node *_root;
+    C _compare;
+    size_t _itemCount;
+};
+
+template<class K, class D, class C>
+size_t AVLTree<K, D, C>::size() {
+    return _itemCount;
+}
+
+template<class K, class D, class C>
+bool AVLTree<K, D, C>::isEmpty() {
+    return !_itemCount;
+}
+
+template<class K, class D, class C>
+D *AVLTree<K, D, C>::find(const K &key) {
+    auto node = findAUX(key, _root);
+    return node ? &node->data : nullptr;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::findAUX(const K &key, AVLTree::Node *node) {
+    if (!node) { return nullptr; }
+    auto compResult = _compare(key, node->key);
+    switch (compResult) {
+        case C::LESS:
+            return findAUX(key, node->left);
+        case C::EQUAL:
+            return node;
+        case C::MORE:
+            return findAUX(key, node->right);
         default:
-            return curNode;
+            assert(false);
     }
 }
 
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::rotateLeft(Node<T>* curNode) {
-    Node<T>* newRoot = curNode->right;
-    curNode->right = newRoot->left;
-    newRoot->left = curNode;
-    fixHeight(curNode);
-    fixHeight(newRoot);
-    return newRoot;
+template<class K, class D, class C>
+AVLTree<K, D, C>::AVLTree(const C &compare) : _compare(compare), _root(nullptr), _itemCount(0) {}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::insert(const K &key, const D &data) {
+    _root = insertAUX(key, data, _root);
 }
 
-template <typename T, typename Comparator>
-Node<T>* AvlTree<T, Comparator>::rotateRight(Node<T>* curNode) {
-    Node<T>* newRoot = curNode->left;
-    curNode->left = newRoot->right;
-    newRoot->right = curNode;
-    fixHeight(curNode);
-    fixHeight(newRoot);
-    return newRoot;
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::insertAUX(const K &key, const D &data, AVLTree::Node *node) {
+    if (!node) {
+        _itemCount++;
+        return new Node(key, data);
+    }
+    auto compResult = _compare(key, node->key);
+    switch (compResult) {
+        case C::LESS:
+            node->left = insertAUX(key, data, node->left);
+            break;
+        case C::EQUAL:
+            break;
+        case C::MORE:
+            node->right = insertAUX(key, data, node->right);
+            break;
+    }
+    return balance(node);
 }
 
-template <typename T, typename Comparator>
-void AvlTree<T, Comparator>::fixHeight(Node<T>* curNode) {
-    curNode->height = std::max(getHeight(curNode->left), getHeight(curNode->right)) + 1;
-}
-
-template <typename T, typename Comparator>
-size_t AvlTree<T, Comparator>::getHeight(Node<T>* curNode) {
-    return curNode ? curNode->height : 0;
-}
-
-template <typename T, typename Comparator>
-bool AvlTree<T, Comparator>::Has(const T& data) {
-   Node<T>* curNode = root;
-   while(curNode) {
-        if (curNode->m_data == data) {
-            return true;
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::eraseAUX(const K &key, AVLTree::Node *node) {
+    if (!node) { return nullptr; }
+    auto compResult = _compare(key, node->key);
+    switch (compResult) {
+        case C::LESS:
+            node->left = eraseAUX(key, node->left);
+            break;
+        case C::EQUAL: {
+            return deleteAUX(node);
         }
-        if (curNode->m_data > data) {
-            curNode = curNode->left;
-        } else {
-            curNode = curNode->right;
+        case C::MORE:
+            node->right = eraseAUX(key, node->right);
+            break;
+    }
+    return balance(node);
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::findAndRemoveMin(AVLTree::Node *node, AVLTree::Node **minNode) {
+    if (!node->left) {
+        *minNode = node;
+        return node->right;
+    }
+    node->left = findAndRemoveMin(node->left, minNode);
+    return balance(node);
+}
+
+template<class K, class D, class C>
+int AVLTree<K, D, C>::balanceFactor(Node *node) {
+    return height(node->right) - height(node->left);
+}
+
+template<class K, class D, class C>
+char AVLTree<K, D, C>::height(AVLTree::Node *node) {
+    if (!node) { return 0; }
+    return node->height;
+}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::fixHeight(AVLTree::Node *node) {
+    if (!node) { return; }
+    node->height = std::max(node->left ? node->left->height : 0, node->right ? node->right->height : 0) + 1;
+}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::erase(const K &key) {
+    _root = eraseAUX(key, _root);
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::balance(AVLTree::Node *node) {
+    fixHeight(node);
+    fixElementCount(node);
+    auto balance = balanceFactor(node);
+    if (balance == 2) {
+        if (balanceFactor(node->right) < 0) {
+            node->right = rotateRight(node->right);
         }
-   }
-   return false;
+        return rotateLeft(node);
+    } else if (balance == -2) {
+        if (balanceFactor(node->left) > 0) {
+            node->left = rotateLeft(node->left);
+        }
+        return rotateRight(node);
+    }
+    return node;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateLeft(AVLTree::Node *node) {
+    auto right = node->right;
+    node->right = right->left;
+    right->left = node;
+    fixHeight(node);
+    fixHeight(right);
+    fixElementCount(node);
+    fixElementCount(right);
+    return right;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateRight(AVLTree::Node *node) {
+    auto left = node->left;
+    node->left = left->right;
+    left->right = node;
+    fixHeight(node);
+    fixHeight(left);
+    fixElementCount(node);
+    fixElementCount(left);
+    return left;
+}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::fixElementCount(AVLTree::Node *node) {
+    if (!node) { return; }
+    node->elementCount = ((node->left ? node->left->elementCount : 0) + (node->right ? node->right->elementCount : 0) + 1);
+}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::traverseInOrder(const std::function<void(const K &)> &callback) {
+    if (!_root) { return; }
+    std::stack<Node *> stack;
+    stack.push(_root);
+    auto current = _root;
+    while (current->left) {
+        current = current->left;
+        stack.push(current);
+    }
+    while (!stack.empty()) {
+        current = stack.top();
+        callback(current->key);
+        stack.pop();
+
+        if (!current->right) { continue; }
+        current = current->right;
+        stack.push(current);
+        while (current->left) {
+            current = current->left;
+            stack.push(current);
+        }
+    }
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::deleteAUX(Node *node) {
+    _itemCount--;
+    auto left = node->left;
+    auto right = node->right;
+    node->left = nullptr;
+    node->right = nullptr;
+    delete node;
+
+    if (!right) { return left; }
+    Node *minNode = nullptr;
+    auto treeWithoutMinNode = findAndRemoveMin(right, &minNode);
+    minNode->right = treeWithoutMinNode;
+    minNode->left = left;
+    return balance(minNode);
+}
+
+
+template<class K, class D, class C = Compare<K>>
+class SolderAVLTree : public AVLTree<K, D, C> {
+public:
+    using typename AVLTree<K, D, C>::Node;
+    explicit SolderAVLTree(const C &compare = C());
+    void eraseAtPosition(size_t position);
+    size_t insertAndGetPos(const K &key, const D &data);
+
+private:
+    Node *insertWithPositionAUX(const K &key, const D &data, Node *node, size_t &position);
+    Node *eraseAtPositionAUX(Node *node, size_t reminder);
+
+    size_t elementCountWithoutRightTree(Node *node);
+    using AVLTree<K, D, C>::eraseAUX;
+    using AVLTree<K, D, C>::insertAUX;
+    using AVLTree<K, D, C>::balance;
+    using AVLTree<K, D, C>::deleteAUX;
+    using AVLTree<K, D, C>::_root;
+    using AVLTree<K, D, C>::_compare;
+    using AVLTree<K, D, C>::_itemCount;
+};
+
+
+template<class K, class D, class C>
+typename SolderAVLTree<K, D, C>::Node *
+SolderAVLTree<K, D, C>::insertWithPositionAUX(const K &key, const D &data, Node *node, size_t &position) {
+    if (!node) {
+        _itemCount++;
+        return new Node(key, data);
+    }
+    auto compResult = _compare(key, node->key);
+    switch (compResult) {
+        case C::LESS:
+            node->left = insertWithPositionAUX(key, data, node->left, position);
+            break;
+        case C::EQUAL:
+            break;
+        case C::MORE:
+            position += elementCountWithoutRightTree(node);
+            node->right = insertWithPositionAUX(key, data, node->right, position);
+            break;
+    }
+    return balance(node);
+}
+
+template<class K, class D, class C>
+size_t SolderAVLTree<K, D, C>::insertAndGetPos(const K &key, const D &data) {
+    size_t pos = 0;
+    _root = insertWithPositionAUX(key, data, _root, pos);
+    return _itemCount - pos - 1;
+}
+
+template<class K, class D, class C>
+SolderAVLTree<K, D, C>::SolderAVLTree(const C &compare) : AVLTree<K, D, C>(compare) {
+}
+
+template<class K, class D, class C>
+void SolderAVLTree<K, D, C>::eraseAtPosition(size_t position) {
+    assert(position <= _itemCount);
+    position = _itemCount - position - 1;
+    _root = eraseAtPositionAUX(_root, position + 1);
+}
+
+template<class K, class D, class C>
+size_t SolderAVLTree<K, D, C>::elementCountWithoutRightTree(Node *node) {
+    if (!node->left) { return 1; }
+    return node->left->elementCount + 1;
+}
+
+template<class K, class D, class C>
+typename SolderAVLTree<K, D, C>::Node *
+SolderAVLTree<K, D, C>::eraseAtPositionAUX(Node *node, size_t reminder) {
+    if (!node) { return nullptr; }
+    auto currentNodePos = elementCountWithoutRightTree(node);
+    if (currentNodePos < reminder) {
+        reminder -= currentNodePos;
+        node->right = eraseAtPositionAUX(node->right, reminder);
+    } else if(currentNodePos > reminder) {
+        node->left = eraseAtPositionAUX(node->left, reminder);
+    } else {
+        return deleteAUX(node);
+    }
+    return balance(node);
+}
+
+void run(std::istream &in, std::ostream &out) {
+    size_t commandCount = 0;
+    in >> commandCount;
+
+    SolderAVLTree<size_t, char> tree;
+    int command = 0;
+    size_t heightOrIndex = 0;
+    for (size_t i = 0; i < commandCount; ++i) {
+        in >> command >> heightOrIndex;
+        switch (command) {
+            case 1:
+                out <<tree.insertAndGetPos(heightOrIndex, 0) << std::endl;
+                break;
+            case 2:
+                tree.eraseAtPosition(heightOrIndex);
+                break;
+            default:
+                assert(false && "Не известная команда");
+        }
+    }
 }
 
 int main() {
-
-    AvlTree<std::string> tree;
-    int size;
-    std::cin >> size;
-
-    int i = 0;
-    int operation;
-    std::string data;
-
-    while(i < size) {
-
-        std::cin >> operation >> data;
-
-        switch(operation) {
-            case 1:
-            {
-                tree.Add(data);
-                std::cout << "something";
-                break;
-            }
-
-            case 2:
-            {
-                tree.Delete(data);
-                break;
-            }
-        }
-
-        ++i;
-    }
-
+    run(std::cin, std::cout);
     return 0;
 }

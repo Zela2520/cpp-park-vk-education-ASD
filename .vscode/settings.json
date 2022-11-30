@@ -54,6 +54,9 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "utility": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "deque": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

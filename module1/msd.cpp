@@ -48,12 +48,6 @@ void counterSort(std::string *arr , size_t size, int* counterArray, size_t sortI
 
 void MSDSort(std::string* arr, size_t size, size_t sortIndex, size_t maxStringSizeInArray) {
     if (size <= 1) return;
-    // отладка
-    // std::cout << "SortIndex " << sortIndex << " Array size is: " <<  size << std::endl;
-    // for (size_t i = 0; i < size; ++i) {
-    //     std::cout << arr[i] << ' ';
-    // }
-    // std::cout << std::endl;
     int* counterArray = new int[ALPHABET_SIZE];
     counterSort(arr, size, counterArray, sortIndex++); // после этой строки получаем отсортированный по первому разряду массив строк
     if (maxStringSizeInArray > sortIndex) {
