@@ -32,381 +32,414 @@
 #include <functional>
 #include <stack>
 
-
-const size_t RANDOM_SEED = 666;
-const size_t TEST_DATA_SIZE = 1111;
-
 template<class T>
-struct Compare {
-    enum Comparison {LESS, EQUAL, MORE};
+struct Comparator {
+    enum Operators {LESS, EQUAL, MORE};
 
-    Comparison operator()(const T &lhs, const T &rhs) {
-        if (lhs < rhs) { return LESS; }
-        if (lhs > rhs) { return MORE; }
+    Operators operator()(const T &l, const T &r) {
+        if (l < r) { return LESS; }
+        if (l > r) { return MORE; }
         return EQUAL;
     };
 };
 
-template<class K, class D, class C = Compare<K>>
+template<class K, class D, class C = Comparator<K>>
 class AVLTree {
 protected:
     struct Node {
-        K key;
-        D data;
-        Node *left;
-        Node *right;
+        D value;
+        Node *left_child;
+        Node *right_child;
         char height;
+
+        K key;
         size_t elementCount;
 
-        Node(const K &k, const D &d) : key(k), data(d), left(nullptr), right(nullptr), height(1), elementCount(1) {}
-        ~Node() {
-            delete left;
-            delete right;
-        }
-        Node(const Node &rhs) = delete;
-        Node &operator=(const Node &rhs) = delete;
-        Node(Node &&rhs) = delete;
-        Node &operator=(Node &&rhs) = delete;
+        Node(const K &k, const D &d) : value(d), left_child(nullptr), right_child(nullptr), height(1), key(k), elementCount(1) {}
+        Node(const Node &) = delete;
+        Node &operator=(const Node &) = delete;
+        Node(Node &&) = delete;
+        Node &operator=(Node &&) = delete;
+        ~Node() { delete left_child; delete right_child; }
     };
 
 public:
-    explicit AVLTree(const C &compare = C());
-    ~AVLTree() { delete _root; }
-    AVLTree(const Node &rhs) = delete;
-    AVLTree &operator=(const AVLTree &rhs) = delete;
-    AVLTree(AVLTree &&rhs) = delete;
-    AVLTree &operator=(AVLTree &&rhs) = delete;
+    explicit AVLTree(const C &Comparator = C());
+    ~AVLTree() { delete m_root; }
+    AVLTree(const Node &) = delete;
+    AVLTree &operator=(const AVLTree &) = delete;
+    AVLTree(AVLTree &&) = delete;
+    AVLTree &operator=(AVLTree &&) = delete;
 
-    D *find(const K &key);
-    void insert(const K &key, const D &data);
-    void erase(const K &key);
+    D *find(const K &);
+    void insert(const K &, const D &);
+    void erase(const K &);
     size_t size();
     bool isEmpty();
     void traverseInOrder(const std::function<void(const K &)> &callback);
 
 protected:
-    Node *findAUX(const K &key, Node *node);
-    Node *insertAUX(const K &key, const D &data, Node *node);
-    Node *eraseAUX(const K &key, Node *node);
-    Node *deleteAUX(Node *node);
-
-    Node *balance(Node *node);
-    Node *findAndRemoveMin(Node *node, Node **minNode);
-    void fixHeight(Node *node);
-    void fixElementCount(Node *node);
-    int balanceFactor(Node *node);
-    char height(Node *node);
-    Node *rotateLeft(Node *node);
-    Node *rotateRight(Node *node);
-
+    Node *balance(Node*);
+    Node *rotateLeft(Node*);
+    Node *rotateRight(Node*);
+    int balanceFactor(Node*);
+    char height(Node*);
+    void fixHeight(Node*);
+    Node *findAndRemoveMin(Node*, Node**);
+    void fixElementCount(Node*);
     
-    Node *_root;
-    C _compare;
-    size_t _itemCount;
+    // helper functions
+    Node *innerFind(const K &, Node*);
+    Node *innerInsert(const K&, const D&, Node*);
+    Node *innerErase(const K&, Node*);
+    Node *innerDelete(Node*);
+    
+    Node *m_root;
+    C m_comparator;
+    size_t m_soldierCounter;
 };
 
 template<class K, class D, class C>
-size_t AVLTree<K, D, C>::size() {
-    return _itemCount;
-}
+AVLTree<K, D, C>::AVLTree(const C & _comparator) : m_comparator(_comparator), m_root(nullptr), m_soldierCounter(0) {}
 
-template<class K, class D, class C>
-bool AVLTree<K, D, C>::isEmpty() {
-    return !_itemCount;
-}
 
 template<class K, class D, class C>
 D *AVLTree<K, D, C>::find(const K &key) {
-    auto node = findAUX(key, _root);
-    return node ? &node->data : nullptr;
+    auto curNode = innerFind(key, m_root);
+    return curNode ? &curNode->value : nullptr;
 }
 
 template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::findAUX(const K &key, AVLTree::Node *node) {
-    if (!node) { return nullptr; }
-    auto compResult = _compare(key, node->key);
-    switch (compResult) {
+void AVLTree<K, D, C>::insert(const K &key, const D &value) {
+    m_root = innerInsert(key, value, m_root);
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::innerInsert(const K &key, const D &value, AVLTree::Node *curNode) {
+    if (!curNode) {
+        m_soldierCounter++;
+        return new Node(key, value);
+    }
+
+    auto res = m_comparator(key, curNode->key);
+
+    switch (res) {
         case C::LESS:
-            return findAUX(key, node->left);
+            curNode->left_child = innerInsert(key, value, curNode->left_child);
+            break;
         case C::EQUAL:
-            return node;
+            break;
         case C::MORE:
-            return findAUX(key, node->right);
+            curNode->right_child = innerInsert(key, value, curNode->right_child);
+            break;
+    }
+    return balance(curNode);
+}
+
+template<class K, class D, class C>
+void AVLTree<K, D, C>::erase(const K &key) {
+    m_root = innerErase(key, m_root);
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::innerErase(const K &key, AVLTree::Node *curNode) {
+    if (!curNode) { return nullptr; }
+
+    auto res = m_comparator(key, curNode->key);
+
+    switch (res) {
+        case C::LESS:
+            curNode->left_child = innerErase(key, curNode->left_child);
+            break;
+        case C::EQUAL: {
+            return innerDelete(curNode);
+        }
+        case C::MORE:
+            curNode->right_child = innerErase(key, curNode->right_child);
+            break;
+    }
+    return balance(curNode);
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::innerFind(const K &key, AVLTree::Node *curNode) {
+    if (!curNode) { return nullptr; }
+
+    auto res = m_comparator(key, curNode->key);
+
+    switch (res) {
+        case C::LESS:
+            return innerFind(key, curNode->left_child);
+        case C::EQUAL:
+            return curNode;
+        case C::MORE:
+            return innerFind(key, curNode->right_child);
         default:
             assert(false);
     }
 }
 
 template<class K, class D, class C>
-AVLTree<K, D, C>::AVLTree(const C &compare) : _compare(compare), _root(nullptr), _itemCount(0) {}
-
-template<class K, class D, class C>
-void AVLTree<K, D, C>::insert(const K &key, const D &data) {
-    _root = insertAUX(key, data, _root);
-}
-
-template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::insertAUX(const K &key, const D &data, AVLTree::Node *node) {
-    if (!node) {
-        _itemCount++;
-        return new Node(key, data);
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::findAndRemoveMin(AVLTree::Node *curNode, AVLTree::Node **minNode) {
+    if (!curNode->left_child) {
+        *minNode = curNode;
+        return curNode->right_child;
     }
-    auto compResult = _compare(key, node->key);
-    switch (compResult) {
-        case C::LESS:
-            node->left = insertAUX(key, data, node->left);
-            break;
-        case C::EQUAL:
-            break;
-        case C::MORE:
-            node->right = insertAUX(key, data, node->right);
-            break;
-    }
-    return balance(node);
+    curNode->left_child = findAndRemoveMin(curNode->left_child, minNode);
+    return balance(curNode);
 }
 
 template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::eraseAUX(const K &key, AVLTree::Node *node) {
-    if (!node) { return nullptr; }
-    auto compResult = _compare(key, node->key);
-    switch (compResult) {
-        case C::LESS:
-            node->left = eraseAUX(key, node->left);
-            break;
-        case C::EQUAL: {
-            return deleteAUX(node);
-        }
-        case C::MORE:
-            node->right = eraseAUX(key, node->right);
-            break;
-    }
-    return balance(node);
+char AVLTree<K, D, C>::height(AVLTree::Node *curNode) {
+    if (!curNode) { return 0; }
+    return curNode->height;
 }
 
 template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::findAndRemoveMin(AVLTree::Node *node, AVLTree::Node **minNode) {
-    if (!node->left) {
-        *minNode = node;
-        return node->right;
-    }
-    node->left = findAndRemoveMin(node->left, minNode);
-    return balance(node);
+void AVLTree<K, D, C>::fixHeight(AVLTree::Node *curNode) {
+    if (!curNode) { return; }
+    curNode->height = std::max(curNode->left_child ? curNode->left_child->height : 0, curNode->right_child ? curNode->right_child->height : 0) + 1;
 }
 
 template<class K, class D, class C>
-int AVLTree<K, D, C>::balanceFactor(Node *node) {
-    return height(node->right) - height(node->left);
+void AVLTree<K, D, C>::fixElementCount(AVLTree::Node *curNode) {
+    if (!curNode) { return; }
+    curNode->elementCount = ((curNode->left_child ? curNode->left_child->elementCount : 0) + (curNode->right_child ? curNode->right_child->elementCount : 0) + 1);
 }
 
 template<class K, class D, class C>
-char AVLTree<K, D, C>::height(AVLTree::Node *node) {
-    if (!node) { return 0; }
-    return node->height;
-}
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::balance(AVLTree::Node *curNode) {
+    fixHeight(curNode);
+    fixElementCount(curNode);
 
-template<class K, class D, class C>
-void AVLTree<K, D, C>::fixHeight(AVLTree::Node *node) {
-    if (!node) { return; }
-    node->height = std::max(node->left ? node->left->height : 0, node->right ? node->right->height : 0) + 1;
-}
+    auto balance = balanceFactor(curNode);
 
-template<class K, class D, class C>
-void AVLTree<K, D, C>::erase(const K &key) {
-    _root = eraseAUX(key, _root);
-}
-
-template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::balance(AVLTree::Node *node) {
-    fixHeight(node);
-    fixElementCount(node);
-    auto balance = balanceFactor(node);
     if (balance == 2) {
-        if (balanceFactor(node->right) < 0) {
-            node->right = rotateRight(node->right);
+        if (balanceFactor(curNode->right_child) < 0) {
+            curNode->right_child = rotateRight(curNode->right_child);
         }
-        return rotateLeft(node);
+
+        return rotateLeft(curNode);
     } else if (balance == -2) {
-        if (balanceFactor(node->left) > 0) {
-            node->left = rotateLeft(node->left);
+        if (balanceFactor(curNode->left_child) > 0) {
+            curNode->left_child = rotateLeft(curNode->left_child);
         }
-        return rotateRight(node);
+
+        return rotateRight(curNode);
     }
-    return node;
+
+    return curNode;
 }
 
 template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateLeft(AVLTree::Node *node) {
-    auto right = node->right;
-    node->right = right->left;
-    right->left = node;
-    fixHeight(node);
-    fixHeight(right);
-    fixElementCount(node);
-    fixElementCount(right);
-    return right;
+int AVLTree<K, D, C>::balanceFactor(Node *curNode) {
+    return height(curNode->right_child) - height(curNode->left_child);
 }
 
 template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateRight(AVLTree::Node *node) {
-    auto left = node->left;
-    node->left = left->right;
-    left->right = node;
-    fixHeight(node);
-    fixHeight(left);
-    fixElementCount(node);
-    fixElementCount(left);
-    return left;
+size_t AVLTree<K, D, C>::size() {
+    return m_soldierCounter;
 }
 
 template<class K, class D, class C>
-void AVLTree<K, D, C>::fixElementCount(AVLTree::Node *node) {
-    if (!node) { return; }
-    node->elementCount = ((node->left ? node->left->elementCount : 0) + (node->right ? node->right->elementCount : 0) + 1);
+bool AVLTree<K, D, C>::isEmpty() {
+    return !m_soldierCounter;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateLeft(AVLTree::Node *curNode) {
+    auto right_child = curNode->right_child;
+
+    curNode->right_child = right_child->left_child;
+    right_child->left_child = curNode;
+
+    fixHeight(curNode);
+    fixHeight(right_child);
+
+    fixElementCount(curNode);
+    fixElementCount(right_child);
+
+    return right_child;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::rotateRight(AVLTree::Node *curNode) {
+    auto left_child = curNode->left_child;
+    curNode->left_child = left_child->right_child;
+    left_child->right_child = curNode;
+
+    fixHeight(curNode);
+    fixHeight(left_child);
+
+    fixElementCount(curNode);
+    fixElementCount(left_child);
+
+    return left_child;
+}
+
+template<class K, class D, class C>
+typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::innerDelete(Node *curNode) {
+    m_soldierCounter--;
+    auto left_child = curNode->left_child;
+    auto right_child = curNode->right_child;
+
+    curNode->left_child = nullptr;
+    curNode->right_child = nullptr;
+
+    delete curNode;
+
+    if (!right_child) { return left_child; }
+
+    Node *minNode = nullptr;
+    auto treeWithoutMinNode = findAndRemoveMin(right_child, &minNode);
+
+    minNode->right_child = treeWithoutMinNode;
+    minNode->left_child = left_child;
+
+    return balance(minNode);
 }
 
 template<class K, class D, class C>
 void AVLTree<K, D, C>::traverseInOrder(const std::function<void(const K &)> &callback) {
-    if (!_root) { return; }
+    if (!m_root) { return; }
+
     std::stack<Node *> stack;
-    stack.push(_root);
-    auto current = _root;
-    while (current->left) {
-        current = current->left;
+    stack.push(m_root);
+
+    auto current = m_root;
+    while (current->left_child) {
+        current = current->left_child;
         stack.push(current);
     }
+
     while (!stack.empty()) {
         current = stack.top();
         callback(current->key);
+
         stack.pop();
 
-        if (!current->right) { continue; }
-        current = current->right;
+        if (!current->right_child) { continue; }
+        current = current->right_child;
         stack.push(current);
-        while (current->left) {
-            current = current->left;
+
+        while (current->left_child) {
+            current = current->left_child;
             stack.push(current);
         }
     }
 }
 
-template<class K, class D, class C>
-typename AVLTree<K, D, C>::Node *AVLTree<K, D, C>::deleteAUX(Node *node) {
-    _itemCount--;
-    auto left = node->left;
-    auto right = node->right;
-    node->left = nullptr;
-    node->right = nullptr;
-    delete node;
 
-    if (!right) { return left; }
-    Node *minNode = nullptr;
-    auto treeWithoutMinNode = findAndRemoveMin(right, &minNode);
-    minNode->right = treeWithoutMinNode;
-    minNode->left = left;
-    return balance(minNode);
-}
-
-
-template<class K, class D, class C = Compare<K>>
+template<class K, class D, class C = Comparator<K>>
 class SolderAVLTree : public AVLTree<K, D, C> {
 public:
     using typename AVLTree<K, D, C>::Node;
-    explicit SolderAVLTree(const C &compare = C());
-    void eraseAtPosition(size_t position);
-    size_t insertAndGetPos(const K &key, const D &data);
+    explicit SolderAVLTree(const C &Comparator = C());
+    void deleteWithPos(size_t);
+    size_t insertAndGetPos(const K &, const D &);
 
 private:
-    Node *insertWithPositionAUX(const K &key, const D &data, Node *node, size_t &position);
-    Node *eraseAtPositionAUX(Node *node, size_t reminder);
+    Node *addWithPosInner(const K &, const D &, Node *, size_t &);
+    Node *deleteWithPosInner(Node *, size_t);
 
-    size_t elementCountWithoutRightTree(Node *node);
-    using AVLTree<K, D, C>::eraseAUX;
-    using AVLTree<K, D, C>::insertAUX;
+    size_t elementCountWithoutright_childTree(Node *);
+    using AVLTree<K, D, C>::innerErase;
+    using AVLTree<K, D, C>::innerInsert;
     using AVLTree<K, D, C>::balance;
-    using AVLTree<K, D, C>::deleteAUX;
-    using AVLTree<K, D, C>::_root;
-    using AVLTree<K, D, C>::_compare;
-    using AVLTree<K, D, C>::_itemCount;
+    using AVLTree<K, D, C>::innerDelete;
+    using AVLTree<K, D, C>::m_root;
+    using AVLTree<K, D, C>::m_comparator;
+    using AVLTree<K, D, C>::m_soldierCounter;
 };
 
 
 template<class K, class D, class C>
 typename SolderAVLTree<K, D, C>::Node *
-SolderAVLTree<K, D, C>::insertWithPositionAUX(const K &key, const D &data, Node *node, size_t &position) {
-    if (!node) {
-        _itemCount++;
-        return new Node(key, data);
+SolderAVLTree<K, D, C>::addWithPosInner(const K &key, const D &value, Node *curNode, size_t &index) {
+    if (!curNode) {
+        m_soldierCounter++;
+        return new Node(key, value);
     }
-    auto compResult = _compare(key, node->key);
-    switch (compResult) {
+
+    auto res = m_comparator(key, curNode->key);
+
+    switch (res) {
         case C::LESS:
-            node->left = insertWithPositionAUX(key, data, node->left, position);
+            curNode->left_child = addWithPosInner(key, value, curNode->left_child, index);
             break;
         case C::EQUAL:
             break;
         case C::MORE:
-            position += elementCountWithoutRightTree(node);
-            node->right = insertWithPositionAUX(key, data, node->right, position);
+            index += elementCountWithoutright_childTree(curNode);
+            curNode->right_child = addWithPosInner(key, value, curNode->right_child, index);
             break;
     }
-    return balance(node);
+
+    return balance(curNode);
 }
 
 template<class K, class D, class C>
-size_t SolderAVLTree<K, D, C>::insertAndGetPos(const K &key, const D &data) {
+size_t SolderAVLTree<K, D, C>::insertAndGetPos(const K &key, const D &value) {
     size_t pos = 0;
-    _root = insertWithPositionAUX(key, data, _root, pos);
-    return _itemCount - pos - 1;
+    m_root = addWithPosInner(key, value, m_root, pos);
+
+    return m_soldierCounter - pos - 1;
 }
 
 template<class K, class D, class C>
-SolderAVLTree<K, D, C>::SolderAVLTree(const C &compare) : AVLTree<K, D, C>(compare) {
+SolderAVLTree<K, D, C>::SolderAVLTree(const C &_comparator) : AVLTree<K, D, C>(_comparator) {
 }
 
 template<class K, class D, class C>
-void SolderAVLTree<K, D, C>::eraseAtPosition(size_t position) {
-    assert(position <= _itemCount);
-    position = _itemCount - position - 1;
-    _root = eraseAtPositionAUX(_root, position + 1);
+void SolderAVLTree<K, D, C>::deleteWithPos(size_t index) {
+    assert(index <= m_soldierCounter);
+
+    index = m_soldierCounter - index - 1;
+    m_root = deleteWithPosInner(m_root, index + 1);
 }
 
 template<class K, class D, class C>
-size_t SolderAVLTree<K, D, C>::elementCountWithoutRightTree(Node *node) {
-    if (!node->left) { return 1; }
-    return node->left->elementCount + 1;
+size_t SolderAVLTree<K, D, C>::elementCountWithoutright_childTree(Node *curNode) {
+    if (!curNode->left_child) { return 1; }
+    return curNode->left_child->elementCount + 1;
 }
 
 template<class K, class D, class C>
 typename SolderAVLTree<K, D, C>::Node *
-SolderAVLTree<K, D, C>::eraseAtPositionAUX(Node *node, size_t reminder) {
-    if (!node) { return nullptr; }
-    auto currentNodePos = elementCountWithoutRightTree(node);
-    if (currentNodePos < reminder) {
-        reminder -= currentNodePos;
-        node->right = eraseAtPositionAUX(node->right, reminder);
-    } else if(currentNodePos > reminder) {
-        node->left = eraseAtPositionAUX(node->left, reminder);
+SolderAVLTree<K, D, C>::deleteWithPosInner(Node *curNode, size_t notion) {
+    if (!curNode) { return nullptr; }
+
+    auto nodePos = elementCountWithoutright_childTree(curNode);
+
+    if (nodePos < notion) {
+        notion -= nodePos;
+        curNode->right_child = deleteWithPosInner(curNode->right_child, notion);
+    } else if(nodePos > notion) {
+        curNode->left_child = deleteWithPosInner(curNode->left_child, notion);
     } else {
-        return deleteAUX(node);
+        return innerDelete(curNode);
     }
-    return balance(node);
+
+    return balance(curNode);
 }
 
-void run(std::istream &in, std::ostream &out) {
-    size_t commandCount = 0;
-    in >> commandCount;
+void run(std::istream &input, std::ostream &output) {
+    size_t numbersOfCommand = 0;
+    input >> numbersOfCommand;
 
     SolderAVLTree<size_t, char> tree;
+
     int command = 0;
-    size_t heightOrIndex = 0;
-    for (size_t i = 0; i < commandCount; ++i) {
-        in >> command >> heightOrIndex;
+    size_t index = 0;
+
+    for (size_t i = 0; i < numbersOfCommand; ++i) {
+        input >> command >> index;
         switch (command) {
             case 1:
-                out <<tree.insertAndGetPos(heightOrIndex, 0) << std::endl;
+                output << tree.insertAndGetPos(index, 0) << std::endl;
                 break;
             case 2:
-                tree.eraseAtPosition(heightOrIndex);
+                tree.deleteWithPos(index);
                 break;
             default:
                 assert(false && "Не известная команда");
@@ -416,5 +449,6 @@ void run(std::istream &in, std::ostream &out) {
 
 int main() {
     run(std::cin, std::cout);
+
     return 0;
 }

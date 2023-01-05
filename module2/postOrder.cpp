@@ -33,7 +33,6 @@ class Node {
         }
         ~Node() = default;
         T m_data;
-        Node<T>* m_parent;
         Node<T>* m_left;
         Node<T>* m_right;
 };
@@ -125,7 +124,6 @@ void BinaryTree<T, Comparator>::push_back(const T& value) {
         }
     }
 
-    inserted_node->m_parent = current_parent;
     if (m_comparator(*inserted_node, *current_parent)) {
         current_parent->m_left = inserted_node;
     } else {

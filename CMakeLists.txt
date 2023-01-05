@@ -23,12 +23,20 @@ add_executable(1_6 module1/kStatistic.cpp)
 add_executable(1_7 module1/msd.cpp)
 
 
-add_executable(2_1 module2/hashTable.cpp)
+# add_executable(2_1 module2/hashTable.cpp)
 
 add_executable(2_1_2 module2/chainHashTable.cpp)
 
 add_executable(2_2 module2/postOrder.cpp)
 
-# add_executable(2_3 module2/BTree.cpp)
+add_executable(rk_4 module2/RK2/4.cpp)
 
 add_executable(2_4 module2/soldier.cpp)
+
+# 3 модуль
+
+add_executable(rk_3 module3/1.cpp)
+
+add_executable(3_4 module3/4.cpp)
+
+add_executable(3_5 module3/5.cpp)

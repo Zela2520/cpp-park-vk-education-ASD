@@ -57,6 +57,14 @@
         "vector": "cpp",
         "deque": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "__hash_table": "cpp",
+        "__node_handle": "cpp",
+        "__tree": "cpp",
+        "cmath": "cpp",
+        "numeric": "cpp",
+        "optional": "cpp",
+        "set": "cpp",
+        "unordered_map": "cpp"
     }
 }
